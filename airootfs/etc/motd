@@ -1,0 +1,6 @@
+
+To install \e[38;2;23;147;209mMonody Linux\e[0m, run \e[35mmonody-install\e[0m or use the desktop shortcut.
+
+For Wi-Fi, authenticate to the wireless network using the \e[35miwctl\e[0m utility.
+Ethernet and WLAN interfaces using DHCP should work automatically.
+

@@ -1,0 +1,7 @@
+[net/launchpad/plank/docks/dock1]
+theme='Arc-Dark'
+position='left'
+icon-zoom=true
+zoom-enabled=true
+zoom-percent=120
+dock-items=['firefox.dockitem', 'thunar.dockitem', 'xfce-terminal.dockitem']

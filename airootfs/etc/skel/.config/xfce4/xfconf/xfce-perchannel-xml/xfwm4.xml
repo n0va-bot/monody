@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="button_layout" type="string" value="CMH|"/>
+    <property name="theme" type="string" value="Arc-Dark"/>
+    <property name="easy_click" type="string" value="Super"/>
+    <property name="titleless_maximize" type="bool" value="true"/>
+    <property name="cycle_windows_key" type="string" value="&lt;Alt&gt;Tab"/>
+    <property name="cycle_reverse_windows_key" type="string" value="&lt;Shift&gt;&lt;Alt&gt;Tab"/>
+    <property name="close_window_key" type="string" value="&lt;Alt&gt;F4"/>
+    <property name="close_window_key" type="string" value="&lt;Super&gt;q"/>
+    <property name="maximize_window_key" type="string" value="&lt;Alt&gt;F10"/>
+    <property name="minimize_window_key" type="string" value="&lt;Alt&gt;F9"/>
+    <property name="show_desktop_key" type="string" value="&lt;Super&gt;d"/>
+    <property name="tile_up_key" type="string" value="&lt;Super&gt;Up"/>
+    <property name="tile_down_key" type="string" value="&lt;Super&gt;Down"/>
+    <property name="tile_left_key" type="string" value="&lt;Super&gt;Left"/>
+    <property name="tile_right_key" type="string" value="&lt;Super&gt;Right"/>
+    <property name="show_dock_shadow" type="bool" value="false"/>
+  </property>
+</channel>

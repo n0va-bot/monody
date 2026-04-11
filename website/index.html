@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monody Linux</title>
+    <meta name="description" content="It fits on a CD">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&family=Ubuntu+Mono&family=Outfit:wght@400;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #1a1b26;
+            --bg-surface: #24283b;
+            --bg-panel: #16161e;
+            --accent-blue: #7aa2f7;
+            --accent-purple: #bb9af7;
+            --green: #9ece6a;
+            --muted: #414868;
+            --text-primary: #c0caf5;
+            --text-muted: #9aa5ce;
+            --border: #414868;
+            --border-soft: rgba(255, 255, 255, 0.06);
+            --radius: 4px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(var(--muted) 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-primary);
+            font-family: 'Ubuntu', sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ── Header Bar ─────────────────────────────── */
+        /* Reminiscent of the Ubuntu panel / top bar */
+        .header-bar {
+            width: 100%;
+            background: rgba(22, 22, 30, 0.95);
+            border-bottom: 2px solid var(--accent-blue);
+            padding: 0.65rem 0;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 0.02em;
+        }
+
+        .header-bar strong {
+            color: var(--accent-blue);
+            font-weight: 700;
+        }
+
+        /* ── Main Container ─────────────────────────── */
+        .container {
+            width: 100%;
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+        }
+
+        /* ── Hero ───────────────────────────────────── */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-dark) 100%);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 4.5rem 2rem 3.5rem;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                0 12px 36px rgba(0, 0, 0, 0.5);
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* subtle dot texture inside hero */
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(rgba(122, 162, 247, 0.06) 1px, transparent 1px);
+            background-size: 18px 18px;
+            pointer-events: none;
+        }
+
+        .hero-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(4rem, 15vw, 6.5rem);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: var(--accent-blue);
+            text-transform: lowercase;
+            margin-bottom: 0.25rem;
+            line-height: 0.9;
+            text-shadow: 0 0 10px rgba(122, 162, 247, 0.3);
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            color: var(--accent-purple);
+            font-weight: 400;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Download box — inset panel feel */
+        .download-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            padding: 1.75rem;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* ── Buttons ─ GTK-esque gradient style ────── */
+        .btn {
+            padding: 0.85rem 2rem;
+            border-radius: var(--radius);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            font-family: 'Ubuntu', sans-serif;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid transparent;
+            /* GTK-style inset highlight + drop shadow */
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                0 2px 4px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(to bottom, #8fb1ff 0%, var(--accent-blue) 100%);
+            color: var(--bg-dark);
+            border-color: #6a92e7;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(to bottom, #a3c1ff 0%, #8fb1ff 100%);
+            transform: translateY(-1px);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 4px 10px rgba(122, 162, 247, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(to bottom, var(--muted) 0%, var(--bg-surface) 100%);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(to bottom, #545c82 0%, var(--muted) 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(to bottom, #b3e67b 0%, #9ece6a 100%) !important;
+            color: #1a1b26 !important;
+            border-color: #7bb354 !important;
+        }
+
+        /* ── Checksum reveal ────────────────────────── */
+        .checksum-container {
+            margin-top: 1.25rem;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .checksum-container.visible {
+            max-height: 100px;
+            opacity: 1;
+        }
+
+        code {
+            display: block;
+            background: var(--bg-dark);
+            color: var(--accent-blue);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius);
+            font-family: 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            border: 1px inset var(--border);
+            word-break: break-all;
+        }
+
+        /* ── Features — vertical list with icons ────── */
+        .features-section {
+            background: var(--bg-surface);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 4px 8px rgba(0, 0, 0, 0.15);
+            margin-bottom: 3rem;
+        }
+
+        .section-label {
+            font-size: 1.6rem;
+            font-weight: 300;
+            color: var(--accent-purple);
+            margin-bottom: 1.75rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .features-list {
+            list-style: none;
+            background: rgba(0, 0, 0, 0.12);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .features-list li {
+            padding: 1.15rem 1.5rem;
+            font-size: 1rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1.15rem;
+            transition: all 0.2s;
+        }
+
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+
+        .features-list li:hover {
+            background: rgba(122, 162, 247, 0.05);
+            color: var(--text-primary);
+        }
+
+        .features-list li img {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        /* ── Requirements ───────────────────────────── */
+        .requirements-section {
+            background: var(--bg-surface);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                0 4px 8px rgba(0, 0, 0, 0.15);
+            margin-bottom: 3rem;
+        }
+
+        .req-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .req-column h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--accent-blue);
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .req-column p.req-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .req-list {
+            list-style: none;
+        }
+
+        .req-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border-soft);
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        .req-list li:last-child {
+            border-bottom: none;
+        }
+
+        .req-list li img {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .req-list li .req-val {
+            margin-left: auto;
+            font-family: 'Ubuntu Mono', monospace;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* ── Specs — key-value table ────────────────── */
+        .specs-section {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.03),
+                0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 3rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .spec-aside h2 {
+            font-size: 2rem;
+            font-weight: 300;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+            line-height: 1.15;
+            margin-bottom: 0.75rem;
+        }
+
+        .spec-aside h2 strong {
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .spec-aside p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .spec-list {
+            list-style: none;
+        }
+
+        .spec-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-soft);
+            font-size: 0.9rem;
+        }
+
+        .spec-list li:last-child {
+            border-bottom: none;
+        }
+
+        .spec-list .key {
+            color: var(--text-muted);
+        }
+
+        .spec-list .val {
+            font-family: 'Ubuntu Mono', monospace;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .spec-list .val.hi {
+            color: var(--accent-blue);
+        }
+
+        /* ── Footer ─────────────────────────────────── */
+        footer {
+            margin-top: 1rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            opacity: 0.5;
+            padding-bottom: 2rem;
+            transition: opacity 0.2s;
+        }
+
+        footer:hover {
+            opacity: 1;
+        }
+
+        footer a {
+            color: var(--accent-purple);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── Responsive ─────────────────────────────── */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            .hero {
+                padding: 3rem 1.5rem 2.5rem;
+            }
+
+            .title {
+                font-size: clamp(3rem, 18vw, 4.5rem);
+            }
+
+            .tagline {
+                font-size: 1.2rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .features-section {
+                padding: 1.5rem;
+            }
+
+            .req-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .specs-section {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+                gap: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-bar">
+        <strong>Monody</strong> Linux
+    </div>
+
+    <main class="container">
+        <section class="hero">
+            <div class="hero-inner">
+                <h1 class="title">monody</h1>
+                <p class="tagline">It fits on a CD</p>
+
+                <div class="download-box">
+                    <div class="btn-group">
+                        <a id="iso-download-link" href="https://github.com/n0va-bot/monody/releases/download/nightly/monody-x86_64.iso" class="btn btn-primary">Download ISO</a>
+                        <button id="copy-btn" class="btn btn-secondary">Copy checksum</button>
+                    </div>
+                    <div id="checksum-display" class="checksum-container">
+                        <code
+                            id="checksum-value">70317ac141b92f9b51366ca889884d8c9e486bee252374e6860ee50deb669534</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="features-section">
+            <h2 class="section-label">What Monody is/has</h2>
+            <ul class="features-list">
+                <li>
+                    <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/devices/48/media-optical.svg" alt="">
+                    It fits on a CD
+                </li>
+                <li>
+                    <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/devices/48/video-display.svg" alt="">
+                    Easy-to-use, customised XFCE-based desktop
+                </li>
+                <li>
+                    <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/apps/48/utilities-terminal.svg" alt="">
+                    Arch/Artix-based
+                </li>
+                <li>
+                    <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/categories/48/preferences-system.svg"
+                        alt="">
+                    No systemd
+                </li>
+                <li>
+                    <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/categories/48/preferences-system-privacy-housekeeping.svg"
+                        alt="">
+                    Other features removed (so it fits on a CD)
+                </li>
+            </ul>
+        </section>
+
+        <section class="specs-section">
+            <div class="spec-aside">
+                <h2>Technical<br><strong>info</strong><br>stuff.</h2>
+            </div>
+            <ul class="spec-list">
+                <li><span class="key">Base</span><span class="val hi">Artix Linux</span></li>
+                <li><span class="key">Init</span><span class="val hi">Runit</span></li>
+                <li><span class="key">Desktop</span><span class="val">XFCE (modified)</span></li>
+                <li><span class="key">Kernel</span><span class="val">Linux (wow)</span></li>
+                <li><span class="key">Architecture</span><span class="val">x86_64</span></li>
+                <li><span class="key">ISO size</span><span id="iso-size" class="val hi">699M</span></li>
+                <li><span class="key">Release</span><span class="val">Rolling</span></li>
+            </ul>
+        </section>
+
+        <section class="requirements-section">
+            <h2 class="section-label">Requirements</h2>
+            <div class="req-columns">
+                <div class="req-column">
+                    <h3>Minimum</h3>
+                    <p class="req-note">It'll run. Probably.</p>
+                    <ul class="req-list">
+                        <li>
+                            <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/actions/48/system-run.svg"
+                                alt="">
+                            Processor
+                            <span class="req-val">x86_64</span>
+                        </li>
+                        <li>
+                            <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/mimes/48/application-x-firmware.svg"
+                                alt="">
+                            RAM
+                            <span class="req-val">512 MB</span>
+                        </li>
+                        <li>
+                            <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/devices/48/drive-harddisk.svg"
+                                alt="">
+                            Storage
+                            <span class="req-val">8 GB</span>
+                        </li>
+                        <li>
+                            <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/devices/48/drive-removable-media-usb.svg"
+                                alt="">
+                            Install media
+                            <span class="req-val">USB or CD</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="req-column">
+                    <h3>Recommended</h3>
+                    <p class="req-note">Usable.</p>
+                    <ul class="req-list">
+                        <li>
+                            <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/actions/48/system-run.svg"
+                                alt="">
+                            Processor
+                            <span class="req-val">x86_64, 2+ cores</span>
+                        </li>
+                        <li>
+                            <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/mimes/48/application-x-firmware.svg"
+                                alt="">
+                            RAM
+                            <span class="req-val">2 GB</span>
+                        </li>
+                        <li>
+                            <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/devices/48/drive-harddisk.svg"
+                                alt="">
+                            Storage
+                            <span class="req-val">20 GB</span>
+                        </li>
+                        <li>
+                            <img src="https://cdn.jsdelivr.net/gh/elementary/icons@main/devices/48/drive-removable-media-usb.svg"
+                                alt="">
+                            Install media
+                            <span class="req-val">USB</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            Made by <a href="https://n0va.nekoweb.org" target="_blank">N0\A</a>
+        </footer>
+    </main>
+
+    <script>
+        const copyBtn = document.getElementById('copy-btn');
+        const checksumDisplay = document.getElementById('checksum-display');
+        const checksumEl = document.getElementById('checksum-value');
+
+        copyBtn.addEventListener('click', async () => {
+            const checksumValue = checksumEl.innerText;
+            try {
+                await navigator.clipboard.writeText(checksumValue);
+                const originalText = copyBtn.innerText;
+                copyBtn.innerText = 'Copied!';
+                copyBtn.classList.add('btn-success');
+                checksumDisplay.classList.add('visible');
+
+                setTimeout(() => {
+                    copyBtn.innerText = originalText;
+                    copyBtn.classList.remove('btn-success');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        });
+    </script>
+</body>
+
+</html>

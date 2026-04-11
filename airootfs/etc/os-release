@@ -1,0 +1,8 @@
+NAME="Monody"
+PRETTY_NAME="Monody"
+ID=monody
+ID_LIKE="artix arch"
+ANSI_COLOR="1;36"
+HOME_URL="https://monody.krzak.org"
+SUPPORT_URL="https://monody.krzak.org"
+BUG_REPORT_URL="https://monody.krzak.org"

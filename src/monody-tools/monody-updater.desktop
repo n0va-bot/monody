@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=System Update
+Comment=Check for and install system updates
+Exec=/usr/bin/monody-updater
+Icon=system-software-update
+Terminal=false
+Type=Application
+Categories=Settings;System;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;
+Keywords=update;upgrade;topgrade;

@@ -1,0 +1,919 @@
+#!/bin/bash
+
+set -uo pipefail
+
+# ── Constants ────────────────────────────────────────────────────────────────
+
+TITLE="Monody Installer"
+TARGET="/mnt/monody-target"
+LOG="/tmp/monody-install.log"
+BACKTITLE="Monody Linux Installer"
+DIALOG=(dialog --backtitle "$BACKTITLE" --title "$TITLE")
+
+INSTALL_STEPS=(
+    "Preparing partitions"
+    "Formatting partitions"
+    "Mounting partitions"
+    "Copying system files"
+    "Configuring system"
+    "Installing bootloader"
+    "Finalizing setup"
+)
+
+# ── State variables ──────────────────────────────────────────────────────────
+
+DISK=""
+BOOT_MODE=""
+TIMEZONE=""
+HOSTNAME_SET=""
+DISPLAY_NAME=""
+USERNAME=""
+USER_PASS=""
+ROOT_PASS=""
+KEYMAP=""
+PARTITION_MODE="auto"
+BOOT_PART=""
+ROOT_PART=""
+SWAP_SIZE=512
+
+# ── Helpers ──────────────────────────────────────────────────────────────────
+
+log() { echo "[$(date '+%H:%M:%S')] $*" >> "$LOG"; }
+
+die() {
+    log "FATAL: $1"
+    if dialog --backtitle "$BACKTITLE" --title "Installation Error" \
+        --yes-label "View Log" --no-label "Exit" --yesno \
+        "$1\n\nWould you like to view the installation log?" 12 62; then
+        dialog --backtitle "$BACKTITLE" --title "Installation Log  ($LOG)" \
+            --exit-label "Close" --textbox "$LOG" 30 90 || true
+    fi
+    cleanup
+    exit 1
+}
+
+cleanup() {
+    log "Flushing data"
+    sync
+    umount -lR "$TARGET" 2>/dev/null || true
+    rm -rf "$TARGET"
+}
+
+trap cleanup EXIT
+
+is_uefi() { [[ -d /sys/firmware/efi ]]; }
+
+# Get the device the live system booted from (to exclude from disk list)
+live_device() {
+    local dev
+    dev=$(awk '$2 == "/run/archiso/bootmnt" {print $1}' /proc/mounts 2>/dev/null | head -1)
+    if [[ -n "$dev" ]]; then
+        echo "$dev" | sed 's/[0-9]*$//' | sed 's/p$//'
+    fi
+}
+
+# ── Step 1: Welcome ─────────────────────────────────────────────────────────
+
+welcome() {
+    if is_uefi; then
+        BOOT_MODE="uefi"
+    else
+        BOOT_MODE="bios"
+    fi
+
+    "${DIALOG[@]}" --yes-label "Install" --no-label "Exit" --yesno \
+"Welcome to the Monody Linux Installer
+
+This will install Monody Linux to your hard drive.
+
+Boot mode:  $(echo "$BOOT_MODE" | tr '[:lower:]' '[:upper:]')
+Bootloader: Limine
+
+WARNING: The selected disk will be COMPLETELY ERASED.
+Make sure you backed up any important data." 14 56 || exit 0
+}
+
+# ── Step 2: Disk selection ───────────────────────────────────────────────────
+
+select_disk() {
+    local live_dev items=() dev size model
+    live_dev=$(live_device)
+
+    while IFS= read -r line; do
+        dev=$(echo "$line" | awk '{print $1}')
+        size=$(echo "$line" | awk '{print $2}')
+        model=$(echo "$line" | cut -d' ' -f3-)
+
+        [[ "$dev" == "$live_dev" ]] && continue
+        [[ "$dev" =~ ^/dev/(loop|sr|ram|zram) ]] && continue
+
+        items+=("$dev" "${size} ${model}")
+    done < <(lsblk -dlpno NAME,SIZE,MODEL 2>/dev/null | grep -v '^\s*$')
+
+    if [[ ${#items[@]} -eq 0 ]]; then
+        die "No suitable disks found for installation."
+    fi
+
+    DISK=$("${DIALOG[@]}" --menu \
+        "Select the disk to install Monody Linux to.\n\nWARNING: ALL data on the selected disk will be DESTROYED!" \
+        16 60 6 "${items[@]}" 3>&1 1>&2 2>&3) || exit 0
+
+    "${DIALOG[@]}" --defaultno --yesno \
+        "Are you sure you want to ERASE ALL DATA on:\n\n  $DISK\n\nThis cannot be undone!" \
+        10 50 || select_disk
+}
+
+# ── Step 2.5: Partition mode ─────────────────────────────────────────────────
+
+select_partition_mode() {
+    local choice
+    choice=$("${DIALOG[@]}" --title "Partitioning" --menu \
+"Choose how to partition $DISK:
+
+  Auto   - The installer creates a boot
+           partition and a root partition automatically.
+
+  Manual - Launch cfdisk to create partitions yourself." \
+        18 64 2 \
+        "auto"   "Automatic" \
+        "manual" "Manual (cfdisk)" \
+        3>&1 1>&2 2>&3) || exit 0
+
+    PARTITION_MODE="$choice"
+
+    if [[ "$PARTITION_MODE" == "manual" ]]; then
+        _run_cfdisk
+        _pick_manual_partitions
+    fi
+}
+
+_run_cfdisk() {
+    clear
+    echo ""
+    echo "  Launching cfdisk on $DISK"
+    echo "  Arrange your partitions, then Write and Quit when done."
+    echo ""
+    sleep 1
+    cfdisk "$DISK" || true
+    partprobe "$DISK" 2>/dev/null || true
+    sleep 1
+}
+
+_pick_manual_partitions() {
+    local parts=() dev size fstype
+
+    while IFS= read -r line; do
+        dev=$(echo "$line" | awk '{print $1}')
+        size=$(echo "$line" | awk '{print $2}')
+        fstype=$(echo "$line" | awk '{print $3}')
+        parts+=("$dev" "${size}  [${fstype:-unformatted}]")
+    done < <(lsblk -lpno NAME,SIZE,FSTYPE "$DISK" \
+        | grep -v "^${DISK}[[:space:]]" \
+        | grep -v '^\s*$')
+
+    if [[ ${#parts[@]} -eq 0 ]]; then
+        die "No partitions found on $DISK after cfdisk. Cannot continue."
+    fi
+
+    ROOT_PART=$("${DIALOG[@]}" --title "Select Root Partition" --menu \
+        "Select the partition to use as the ROOT (/) filesystem.\nIt will be formatted as ext4." \
+        16 56 8 "${parts[@]}" 3>&1 1>&2 2>&3) || exit 0
+
+    BOOT_PART=$("${DIALOG[@]}" --title "Select Boot Partition" --menu \
+        "Select the partition to use as the BOOT (/boot) partition.\nIt will be formatted as FAT32." \
+        16 56 8 "${parts[@]}" 3>&1 1>&2 2>&3) || exit 0
+
+    if [[ "$ROOT_PART" == "$BOOT_PART" ]]; then
+        "${DIALOG[@]}" --msgbox \
+            "Root and boot partitions cannot be the same!\nPlease select again." 8 52
+        _pick_manual_partitions
+    fi
+}
+
+# ── Step 3: Timezone ─────────────────────────────────────────────────────────
+
+select_timezone() {
+    local regions=() region cities=() city
+
+    while IFS= read -r r; do
+        regions+=("$r" "")
+    done < <(find /usr/share/zoneinfo/posix -mindepth 1 -maxdepth 1 -type d \
+        -printf '%f\n' | sort)
+
+    region=$("${DIALOG[@]}" --title "Timezone - Region" --menu \
+        "Select your region:" 20 40 12 "${regions[@]}" 3>&1 1>&2 2>&3) || exit 0
+
+    while IFS= read -r c; do
+        cities+=("$c" "")
+    done < <(find "/usr/share/zoneinfo/posix/$region" -maxdepth 1 -type f \
+        -printf '%f\n' | sort)
+
+    city=$("${DIALOG[@]}" --title "Timezone - City" --menu \
+        "Select your city:" 20 40 12 "${cities[@]}" 3>&1 1>&2 2>&3) || exit 0
+
+    TIMEZONE="$region/$city"
+}
+
+# ── Step 3.5: Keymap ─────────────────────────────────────────────────────────
+
+select_keymap() {
+    local layouts=()
+    for f in $(ls /usr/share/X11/xkb/symbols/ 2>/dev/null | grep -E '^[a-z]{2}$' | sort); do
+        layouts+=("$f" "")
+    done
+
+    if [[ ${#layouts[@]} -eq 0 ]]; then
+        layouts=("us" "" "gb" "" "fr" "" "de" "" "es" "" "it" "" "jp" "" "br" "" "ru" "")
+    fi
+
+    KEYMAP=$("${DIALOG[@]}" --title "Keyboard Layout" --menu \
+        "Select your keyboard layout (X11/Console):" 20 40 12 "${layouts[@]}" 3>&1 1>&2 2>&3) || exit 0
+}
+
+# ── Step 4: Hostname ─────────────────────────────────────────────────────────
+
+set_hostname() {
+    HOSTNAME_SET=$("${DIALOG[@]}" --title "Hostname" --inputbox \
+        "Enter a hostname for this machine:" 8 50 "monody" \
+        3>&1 1>&2 2>&3) || exit 0
+
+    if [[ -z "$HOSTNAME_SET" ]]; then
+        HOSTNAME_SET="monody"
+    fi
+
+    if [[ ! "$HOSTNAME_SET" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
+        "${DIALOG[@]}" --msgbox "Invalid hostname. Use only letters, numbers, and hyphens." 7 50
+        set_hostname
+    fi
+}
+
+# ── Step 4.5: Swapfile size ──────────────────────────────────────────────────
+
+select_swap_size() {
+    local ram_mb auto_label
+    ram_mb=$(awk '/^MemTotal:/ { mb = int(($2 + 1023) / 1024); print mb }' /proc/meminfo)
+    auto_label="Auto  (${ram_mb} MB — matches your RAM, enables hibernation)"
+
+    local choice
+    choice=$("${DIALOG[@]}" --title "Swapfile" --menu \
+"Choose a swapfile size for the installed system.
+
+A swapfile provides extra virtual memory. It also
+enables hibernation when sized to match your RAM.
+
+Recommended: at least 512 MB." \
+        19 58 7 \
+        "auto" "$auto_label" \
+        "0"    "None  (not recommended)" \
+        "256"  "256 MB  — minimal" \
+        "512"  "512 MB  — recommended  ✓" \
+        "1024" "1 GB" \
+        "2048" "2 GB" \
+        "4096" "4 GB" \
+        3>&1 1>&2 2>&3) || exit 0
+
+    if [[ "$choice" == "auto" ]]; then
+        SWAP_SIZE="$ram_mb"
+    else
+        SWAP_SIZE="$choice"
+    fi
+}
+
+# ── Step 5: User creation ────────────────────────────────────────────────────
+
+create_user() {
+    DISPLAY_NAME=$("${DIALOG[@]}" --title "Create User" --inputbox \
+        "Enter your display name:" 8 50 "" \
+        3>&1 1>&2 2>&3) || exit 0
+
+    if [[ -z "$DISPLAY_NAME" ]]; then
+        "${DIALOG[@]}" --msgbox "Display name cannot be empty." 6 40
+        create_user
+        return
+    fi
+
+    local slug
+    slug=$(echo "$DISPLAY_NAME" | tr '[:upper:]' '[:lower:]' \
+        | sed 's/[^a-z0-9]/_/g' | sed 's/__*/_/g' | sed 's/^_//;s/_$//')
+
+    USERNAME=$("${DIALOG[@]}" --title "Create User" --inputbox \
+        "Enter a username (press Enter to accept the suggestion):" 8 50 "$slug" \
+        3>&1 1>&2 2>&3) || exit 0
+
+    if [[ -z "$USERNAME" ]]; then
+        "${DIALOG[@]}" --msgbox "Username cannot be empty." 6 40
+        create_user
+        return
+    fi
+
+    local pass1 pass2
+    pass1=$("${DIALOG[@]}" --title "User Password" --insecure --passwordbox \
+        "Enter password for $USERNAME:" 8 50 \
+        3>&1 1>&2 2>&3) || exit 0
+
+    pass2=$("${DIALOG[@]}" --title "User Password" --insecure --passwordbox \
+        "Confirm password for $USERNAME:" 8 50 \
+        3>&1 1>&2 2>&3) || exit 0
+
+    if [[ "$pass1" != "$pass2" ]]; then
+        "${DIALOG[@]}" --msgbox "Passwords do not match. Try again." 6 40
+        create_user
+        return
+    fi
+
+    if [[ -z "$pass1" ]]; then
+        "${DIALOG[@]}" --msgbox "Password cannot be empty." 6 40
+        create_user
+        return
+    fi
+
+    USER_PASS="$pass1"
+}
+
+# ── Step 6: Root password ────────────────────────────────────────────────────
+
+set_root_password() {
+    if ! "${DIALOG[@]}" --yesno \
+        "Would you like to set a root password?\n\n(Your user will have sudo access either way)" \
+        9 50; then
+        ROOT_PASS=""
+        return
+    fi
+
+    local pass1 pass2
+    pass1=$("${DIALOG[@]}" --title "Root Password" --insecure --passwordbox \
+        "Enter root password:" 8 50 \
+        3>&1 1>&2 2>&3) || exit 0
+
+    pass2=$("${DIALOG[@]}" --title "Root Password" --insecure --passwordbox \
+        "Confirm root password:" 8 50 \
+        3>&1 1>&2 2>&3) || exit 0
+
+    if [[ "$pass1" != "$pass2" ]]; then
+        "${DIALOG[@]}" --msgbox "Passwords do not match. Try again." 6 40
+        set_root_password
+        return
+    fi
+
+    ROOT_PASS="$pass1"
+}
+
+# ── Step 7: Summary + confirm ────────────────────────────────────────────────
+
+confirm_install() {
+    local root_status="(disabled)"
+    [[ -n "$ROOT_PASS" ]] && root_status="(set)"
+
+    local swap_label="None"
+    [[ "$SWAP_SIZE" -gt 0 ]] && swap_label="${SWAP_SIZE} MB"
+
+    local part_label="Automatic"
+    if [[ "$PARTITION_MODE" == "manual" ]]; then
+        part_label="Manual  (boot: $BOOT_PART | root: $ROOT_PART)"
+    fi
+
+    "${DIALOG[@]}" --yes-label "Install" --no-label "Cancel" --yesno \
+"Please review your installation settings:
+
+  Boot mode:      $(echo "$BOOT_MODE" | tr '[:lower:]' '[:upper:]')
+  Disk:           $DISK
+  Partitioning:   $part_label
+  Bootloader:     Limine
+  Swapfile:       $swap_label
+  Timezone:       $TIMEZONE
+  Keymap:         $KEYMAP
+  Hostname:       $HOSTNAME_SET
+  User:           $USERNAME
+  Root password:  $root_status
+
+Proceed with installation?" 22 66 || exit 0
+}
+
+# ── Installation ─────────────────────────────────────────────────────────────
+
+do_install() {
+    local PROG_FILE FAIL_FILE
+    PROG_FILE=$(mktemp /tmp/monody-prog.XXXXX)
+    FAIL_FILE=$(mktemp /tmp/monody-fail.XXXXX)
+
+    # Write progress: "STEP_INDEX:PERCENT:MESSAGE"
+    _prog() {
+        echo "$1:$2:$3" > "$PROG_FILE"
+        log "[Step $1: $2%] $3"
+    }
+
+    # ── Install steps run in background ─────────────────────────────────────
+    (
+        set +e
+
+        _prog 0 50 "Partitioning $DISK ..."
+        if ! partition_disk >> "$LOG" 2>&1; then
+            echo "Failed to partition $DISK - see $LOG for details." > "$FAIL_FILE"
+            exit 1
+        fi
+        _prog 0 100 "Partitioning complete"
+
+        _prog 1 50 "Formatting partitions ..."
+        if ! format_partitions >> "$LOG" 2>&1; then
+            echo "Failed to format partitions." > "$FAIL_FILE"
+            exit 1
+        fi
+        _prog 1 100 "Formatting complete"
+
+        _prog 2 50 "Mounting partitions ..."
+        if ! mount_partitions >> "$LOG" 2>&1; then
+            echo "Failed to mount partitions." > "$FAIL_FILE"
+            exit 1
+        fi
+        _prog 2 100 "Mounts complete"
+
+        if ! copy_system_ "_prog 3" >> "$LOG" 2>&1; then
+            echo "Failed to copy system files." > "$FAIL_FILE"
+            exit 1
+        fi
+
+        _prog 4 5 "Generating fstab ..."
+        if ! generate_fstab >> "$LOG" 2>&1; then
+            echo "Failed to generate fstab." > "$FAIL_FILE"
+            exit 1
+        fi
+
+        if ! configure_system_ "_prog 4" >> "$LOG" 2>&1; then
+            echo "Failed to configure system." > "$FAIL_FILE"
+            exit 1
+        fi
+
+        _prog 5 20 "Installing bootloader ..."
+        if ! install_bootloader >> "$LOG" 2>&1; then
+            echo "Failed to install bootloader." > "$FAIL_FILE"
+            exit 1
+        fi
+        _prog 5 100 "Bootloader installed"
+
+        _prog 6 10 "Creating swapfile ..."
+        create_swapfile >> "$LOG" 2>&1 || log "WARNING: Swapfile failed"
+        
+        _prog 6 60 "Post-install cleanup ..."
+        post_cleanup >> "$LOG" 2>&1 || true
+        
+        _prog 6 100 "Installation complete!"
+    ) &
+    local INSTALL_PID=$!
+
+    # ── UI Renderer ──────────────────────────────────────────────────────────
+    (
+        local step_idx=0 pct=0 msg="Starting..."
+        while kill -0 "$INSTALL_PID" 2>/dev/null; do
+            if [[ -s "$PROG_FILE" ]]; then
+                IFS=':' read -r s_idx p_val m_text < "$PROG_FILE"
+                step_idx=${s_idx:-0}
+                pct=${p_val:-0}
+                msg=${m_text:-""}
+            fi
+
+            # Format the visual sidebar
+            local content="\Zb\Z4Monody Linux Installation\Zn\n"
+            content+="\Z4│\Zn\n"
+            for i in "${!INSTALL_STEPS[@]}"; do
+                if [[ $i -lt $step_idx ]]; then
+                    content+="\Z4│\Zn \Z2[✓] ${INSTALL_STEPS[$i]}\Zn\n"
+                elif [[ $i -eq $step_idx ]]; then
+                    content+="\Z4│ \Z4[➤] \Zb${INSTALL_STEPS[$i]} (${pct}%)\Zn\n"
+                else
+                    content+="\Z4│\Zn     \Z0${INSTALL_STEPS[$i]}\Zn\n"
+                fi
+            done
+            content+="\Z4│\Zn\n\Z4└─ $msg\Zn"
+
+            printf '%s\nXXX\n%s\nXXX\n' "$pct" "$content"
+            sleep 0.2
+        done
+
+        # Final state
+        local final_list=""
+        for step in "${INSTALL_STEPS[@]}"; do
+            final_list+="\Z2│\Zn \Z2[✓] $step\Zn\n"
+        done
+        printf "100\nXXX\n\Zb\Z4Monody Linux Installation\Zn\n\Z2│\Zn\n${final_list}\Z2│\Zn\n\Zb\Z4└─ Installation complete!\Zn\nXXX\n"
+    ) | dialog --colors --backtitle "$BACKTITLE" --title "Installing Monody Linux" \
+        --gauge "" 18 70 0
+
+    # Wait for background job and get its exit code
+    wait "$INSTALL_PID" 2>/dev/null
+    local rc=$?
+
+    local fail_msg
+    fail_msg=$(cat "$FAIL_FILE" 2>/dev/null || true)
+    rm -f "$PROG_FILE" "$FAIL_FILE"
+
+    if [[ $rc -ne 0 ]] || [[ -n "$fail_msg" ]]; then
+        die "${fail_msg:-Installation failed. Check $LOG for details.}"
+    fi
+}
+
+# ── Partitioning ─────────────────────────────────────────────────────────────
+
+partition_disk() {
+    log "Partition mode: $PARTITION_MODE  |  Boot mode: $BOOT_MODE"
+
+    if [[ "$PARTITION_MODE" == "manual" ]]; then
+        partprobe "$DISK" 2>/dev/null || true
+        sleep 1
+        log "Manual partitioning: boot=$BOOT_PART  root=$ROOT_PART"
+        return 0
+    fi
+
+    log "Auto-partitioning $DISK"
+    wipefs -af "$DISK" >> "$LOG" 2>&1
+    sgdisk -Z  "$DISK" >> "$LOG" 2>&1 || true
+
+    if [[ "$BOOT_MODE" == "uefi" ]]; then
+        sgdisk -n 1:0:+512M -t 1:ef00 -c 1:"EFI"    "$DISK" >> "$LOG" 2>&1
+        sgdisk -n 2:0:0     -t 2:8300 -c 2:"Monody" "$DISK" >> "$LOG" 2>&1
+    else
+        (
+            echo o; echo n; echo p; echo 1; echo; echo +512M
+            echo t; echo c
+            echo a          # toggle bootable on partition 1
+            echo n; echo p; echo 2; echo; echo
+            echo w
+        ) | fdisk "$DISK" >> "$LOG" 2>&1
+    fi
+
+    partprobe "$DISK" 2>/dev/null || true
+    sleep 1
+
+    BOOT_PART=$(part_dev "$DISK" 1)
+    ROOT_PART=$(part_dev "$DISK" 2)
+}
+
+part_dev() {
+    local disk="$1" num="$2"
+    if [[ "$disk" =~ [0-9]$ ]]; then
+        echo "${disk}p${num}"
+    else
+        echo "${disk}${num}"
+    fi
+}
+
+format_partitions() {
+    log "Formatting boot: $BOOT_PART"
+    mkfs.fat -F 32 "$BOOT_PART" >> "$LOG" 2>&1
+
+    log "Formatting root: $ROOT_PART"
+    mkfs.ext4 -O ^64bit,^metadata_csum_seed,^metadata_csum,^orphan_file \
+        -F -L "Monody" "$ROOT_PART" >> "$LOG" 2>&1
+}
+
+mount_partitions() {
+    mkdir -p "$TARGET"
+    mount "$ROOT_PART" "$TARGET"
+    mkdir -p "$TARGET/boot"
+    mount "$BOOT_PART" "$TARGET/boot"
+    log "Partitions mounted at $TARGET  (boot=$BOOT_PART  root=$ROOT_PART)"
+}
+
+# ── Copy system ──────────────────────────────────────────────────────────────
+
+copy_system_() {
+    local prog_func="$1"
+    log "Starting rsync copy..."
+
+    rsync -aAX --info=progress2 / "$TARGET/" \
+        --exclude='/dev/*' \
+        --exclude='/proc/*' \
+        --exclude='/sys/*' \
+        --exclude='/tmp/*' \
+        --exclude='/run/*' \
+        --exclude='/mnt/*' \
+        --exclude='/media/*' \
+        --exclude='/lost+found' \
+        --exclude="$TARGET" \
+        --exclude='/etc/fstab' \
+        2>&1 | stdbuf -oL tr '\r' '\n' | while read -r line; do
+            if [[ "$line" =~ ([0-9]+)% ]]; then
+                local pct="${BASH_REMATCH[1]}"
+                $prog_func "$pct" "Copying system files..."
+            fi
+            # Also echo to allow logging
+            echo "$line"
+        done
+
+    local bootmnt
+    bootmnt=$(awk '$2 == "/run/archiso/bootmnt" {print $2}' /proc/mounts | head -1)
+    [[ -z "$bootmnt" ]] && bootmnt="/run/archiso/bootmnt"
+
+    if [[ -d "$bootmnt/arch/boot" ]]; then
+        $prog_func "98" "Copying kernel and microcode..."
+        cp "$bootmnt/arch/boot/"*-ucode.img "$TARGET/boot/" 2>/dev/null || true
+        cp "$bootmnt/arch/boot/x86_64/vmlinuz-linux" "$TARGET/boot/vmlinuz-linux" 2>/dev/null || true
+    fi
+
+    log "rsync complete"
+}
+
+# ── Generate fstab ───────────────────────────────────────────────────────────
+
+generate_fstab() {
+    log "Generating fstab  (boot=$BOOT_PART  root=$ROOT_PART)"
+
+    local root_uuid boot_uuid
+    root_uuid=$(blkid -s UUID -o value "$ROOT_PART")
+    boot_uuid=$(blkid -s UUID -o value "$BOOT_PART")
+
+    cat > "$TARGET/etc/fstab" <<EOF
+# <file system>  <mount point>  <type>  <options>  <dump>  <pass>
+UUID=$root_uuid  /              ext4    defaults   0       1
+UUID=$boot_uuid  /boot          vfat    defaults   0       2
+EOF
+
+    log "fstab written"
+}
+
+# ── Configure system ─────────────────────────────────────────────────────────
+
+configure_system_() {
+    local prog_func="$1"
+    log "Configuring system in chroot"
+
+    $prog_func 5 "Mounting internal filesystems..."
+    mount --bind /dev     "$TARGET/dev"
+    mount --bind /dev/pts "$TARGET/dev/pts"
+    mount -t proc proc    "$TARGET/proc"
+    mount -t sysfs sys    "$TARGET/sys"
+
+    $prog_func 10 "Writing configuration files..."
+    # ── Write mkinitcpio.conf (remove archiso hooks) ──────────────────────
+    cat > "$TARGET/etc/mkinitcpio.conf" <<'MKINIT'
+MODULES=()
+BINARIES=()
+FILES=()
+HOOKS=(base udev autodetect microcode modconf kms keyboard keymap consolefont block filesystems fsck)
+COMPRESSION="zstd"
+MKINIT
+
+    # ── Restore standard linux preset ─────────────────────────────────────
+    cat > "$TARGET/etc/mkinitcpio.d/linux.preset" <<'PRESET'
+ALL_config="/etc/mkinitcpio.conf"
+ALL_kver="/boot/vmlinuz-linux"
+
+PRESETS=('default')
+
+default_image="/boot/initramfs-linux.img"
+PRESET
+
+    # Remove archiso mkinitcpio overrides
+    rm -rf "$TARGET/etc/mkinitcpio.conf.d"
+
+    $prog_func 20 "Running chroot configuration..."
+    # ── Chroot and configure ──────────────────────────────────────────────
+    chroot "$TARGET" /bin/bash -e <<CHROOT_SCRIPT
+# Timezone
+ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime
+
+# Locale
+echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+locale-gen
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+
+# Keymap
+echo "KEYMAP=$KEYMAP" > /etc/vconsole.conf
+mkdir -p /etc/X11/xorg.conf.d
+cat > /etc/X11/xorg.conf.d/00-keyboard.conf <<KEYBOARD
+Section "InputClass"
+        Identifier "system-keyboard"
+        MatchIsKeyboard "on"
+        Option "XkbLayout" "$KEYMAP"
+EndSection
+KEYBOARD
+
+# Hostname
+echo "$HOSTNAME_SET" > /etc/hostname
+cat > /etc/hosts <<HOSTS
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   $HOSTNAME_SET
+HOSTS
+
+# Remove live user
+userdel -rf live 2>/dev/null || true
+
+# Create real user
+useradd -m -G wheel,audio,video,storage,optical,network -s /bin/bash -c "$DISPLAY_NAME" "$USERNAME"
+echo "$USERNAME:$USER_PASS" | chpasswd
+
+# Root password
+if [[ -n "$ROOT_PASS" ]]; then
+    echo "root:$ROOT_PASS" | chpasswd
+else
+    passwd -l root
+fi
+
+# Sudo for wheel group
+echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/wheel
+chmod 440 /etc/sudoers.d/wheel
+
+# Remove live sudo override
+rm -f /etc/sudoers.d/live
+rm -f /home/$USERNAME/.bash_profile
+
+# Set up Welcome app autostart for the first user
+mkdir -p /home/$USERNAME/.config/autostart
+cp /usr/share/applications/monody-welcome.desktop /home/$USERNAME/.config/autostart/
+chmod +x /home/$USERNAME/.config/autostart/monody-welcome.desktop
+chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
+
+# Runit services
+ln -sf /etc/runit/sv/lightdm /etc/runit/runsvdir/default/ 2>/dev/null || true
+rm -f /etc/lightdm/lightdm.conf.d/autologin.conf
+
+for tty in tty1 tty2; do
+    if [[ -d /etc/runit/sv/agetty-\$tty ]]; then
+        ln -sf /etc/runit/sv/agetty-\$tty /etc/runit/runsvdir/default/ 2>/dev/null || true
+    fi
+done
+
+ln -sf /etc/runit/sv/NetworkManager /etc/runit/runsvdir/default/ 2>/dev/null || true
+ln -sf /etc/runit/sv/elogind        /etc/runit/runsvdir/default/ 2>/dev/null || true
+
+# Pacman keyring
+pacman-key --init
+pacman-key --populate artix archlinux
+
+rm -f /usr/local/bin/monody-install
+: > /etc/motd
+CHROOT_SCRIPT
+
+    $prog_func 60 "Regenerating initramfs (this will take a while)..."
+    chroot "$TARGET" mkinitcpio -P
+    
+    $prog_func 100 "Configuration complete"
+    log "System configuration complete"
+}
+
+# ── Bootloader ───────────────────────────────────────────────────────────────
+
+install_bootloader() {
+    log "Installing Limine ($BOOT_MODE)  root=$ROOT_PART"
+
+    local root_uuid
+    root_uuid=$(blkid -s UUID -o value "$ROOT_PART")
+
+    if [[ "$BOOT_MODE" == "uefi" ]]; then
+        mkdir -p "$TARGET/boot/EFI/BOOT"
+        cp /usr/share/limine/BOOTX64.EFI "$TARGET/boot/EFI/BOOT/BOOTX64.EFI"
+        cp "$TARGET/usr/share/backgrounds/limine-bg.png" "$TARGET/boot/limine-bg.png" 2>/dev/null || true
+
+        cat > "$TARGET/boot/limine.conf" <<EOF
+timeout: 5
+wallpaper: boot():/limine-bg.png
+wallpaper_style: centered
+backdrop: 1a1b26
+interface_branding: Monody Linux
+interface_branding_colour: 4
+term_palette: 1a1b26;f7768e;9ece6a;e0af68;7aa2f7;bb9af7;7dcfff;a9b1d6
+term_palette_bright: 414868;ff7a93;b9f27c;ff9e64;7aa2f7;dbb6fd;0db9d7;c0caf5
+term_margin: 20
+
+/Monody Linux
+    comment: The Monody Linux installation on $DISK
+    protocol: linux
+    kernel_path: boot():/vmlinuz-linux
+    kernel_cmdline: root=UUID=$root_uuid rw quiet splash
+    module_path: boot():/initramfs-linux.img
+EOF
+
+        local boot_part_num
+        boot_part_num=$(echo "$BOOT_PART" | grep -o '[0-9]*$')
+        if command -v efibootmgr &>/dev/null; then
+            efibootmgr | grep -i 'Monody' | grep -o 'Boot[0-9A-F]*' | \
+                sed 's/Boot//' | xargs -r -I{} efibootmgr -b {} -B >> "$LOG" 2>&1 || true
+            efibootmgr -c \
+                -d "$DISK" \
+                -p "$boot_part_num" \
+                -l '\EFI\BOOT\BOOTX64.EFI' \
+                -L 'Monody Linux' >> "$LOG" 2>&1
+            log "EFI boot entry registered"
+        else
+            log "WARNING: efibootmgr not found — skipping EFI entry registration"
+        fi
+
+    else
+        mkdir -p "$TARGET/boot/limine"
+        cp /usr/share/limine/limine-bios.sys "$TARGET/boot/limine/"
+        cp "$TARGET/usr/share/backgrounds/limine-bg.png" "$TARGET/boot/limine/limine-bg.png" 2>/dev/null || true
+
+        cat > "$TARGET/boot/limine/limine.conf" <<EOF
+timeout: 5
+wallpaper: boot():/limine/limine-bg.png
+wallpaper_style: centered
+backdrop: 1a1b26
+interface_branding: Monody Linux
+interface_branding_colour: 4
+term_palette: 1a1b26;f7768e;9ece6a;e0af68;7aa2f7;bb9af7;7dcfff;a9b1d6
+term_palette_bright: 414868;ff7a93;b9f27c;ff9e64;7aa2f7;dbb6fd;0db9d7;c0caf5
+term_margin: 20
+
+/Monody Linux
+    comment: The Monody Linux installation on $DISK
+    protocol: linux
+    kernel_path: boot():/vmlinuz-linux
+    kernel_cmdline: root=UUID=$root_uuid rw quiet splash
+    module_path: boot():/initramfs-linux.img
+EOF
+
+        limine bios-install "$DISK" >> "$LOG" 2>&1
+    fi
+
+    log "Limine installed"
+}
+
+# ── Swapfile ─────────────────────────────────────────────────────────────────
+
+create_swapfile() {
+    if [[ "$SWAP_SIZE" -eq 0 ]]; then
+        log "Swapfile skipped (user chose none)"
+        return 0
+    fi
+
+    log "Creating ${SWAP_SIZE} MB swapfile at $TARGET/swapfile ..."
+    dd if=/dev/zero of="$TARGET/swapfile" bs=1M count="$SWAP_SIZE" status=none
+    chmod 0600 "$TARGET/swapfile"
+    mkswap "$TARGET/swapfile"
+    echo "/swapfile  none  swap  defaults  0  0" >> "$TARGET/etc/fstab"
+    log "Swapfile created (${SWAP_SIZE} MB)"
+}
+
+# ── Post-install cleanup ─────────────────────────────────────────────────────
+
+post_cleanup() {
+    log "Post-install cleanup"
+
+    # Remove live desktop shortcuts from installed user's Desktop
+    rm -f "$TARGET/home/$USERNAME/Desktop/monody-install.desktop"  2>/dev/null || true
+    rm -f "$TARGET/usr/share/applications/monody-install.desktop"  2>/dev/null || true
+
+    # Unmount chroot bind-mounts
+    umount -l "$TARGET/dev/pts" 2>/dev/null || true
+    umount -l "$TARGET/dev"     2>/dev/null || true
+    umount -l "$TARGET/proc"    2>/dev/null || true
+    umount -l "$TARGET/sys"     2>/dev/null || true
+
+    log "Cleanup complete"
+}
+
+# ── Completion ───────────────────────────────────────────────────────────────
+
+install_complete() {
+    echo "Flushing data..."
+    echo "This can take a while on slower drives, you just need to wait"
+    sync
+
+    local content="\Zb\Z4Monody Linux Installation\Zn\n"
+    content+="\Z2│\Zn\n"
+    for step in "${INSTALL_STEPS[@]}"; do
+        content+="\Z2│\Zn \Z2[✓] $step\Zn\n"
+    done
+    content+="\Z2│\Zn\n\Zb\Z4└─ Installation complete!\Zn\n\n"
+    
+    content+="Monody Linux has been successfully installed!\n"
+    content+="Remove installation media and reboot to start using your system.\n\n"
+    content+="  User:     $USERNAME\n"
+    content+="  Hostname: $HOSTNAME_SET"
+
+    "${DIALOG[@]}" --colors --title "Installation Complete" \
+        --yes-label "Reboot Now" --no-label "Stay in Live" --yesno \
+        "$content" 24 70
+
+    if [[ $? -eq 0 ]]; then
+        umount -lR "$TARGET" 2>/dev/null || true
+        reboot
+    fi
+}
+
+# ── Main ─────────────────────────────────────────────────────────────────────
+
+main() {
+    if [[ $EUID -ne 0 ]]; then
+        echo "This installer must be run as root.  Try: sudo monody-install"
+        exit 1
+    fi
+
+    : > "$LOG"
+    log "Monody Installer started"
+
+    welcome
+    select_disk
+    select_partition_mode
+    select_timezone
+    select_keymap
+    set_hostname
+    select_swap_size
+    create_user
+    set_root_password
+    confirm_install
+    do_install
+    install_complete
+}
+
+main "$@"

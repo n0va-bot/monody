@@ -1,0 +1,2 @@
+#!/bin/sh
+exec agetty --autologin live --noclear tty1 linux

@@ -1,0 +1,72 @@
+name: Build and Deploy Repository
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: true
+      REMOTE_HOST:
+        required: true
+
+jobs:
+  build-repo:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Prebuilt Repo
+        uses: actions/cache@v4
+        with:
+          path: prebuilt_repo/
+          key: monody-repo-${{ github.run_id }}
+          restore-keys: |
+            monody-repo-
+
+      - name: Install system dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm \
+            base-devel git archiso vala vte3 gtk3 meson sudo sshpass \
+            squashfs-tools dosfstools mtools libisoburn openssh \
+            libwnck3 accountsservice dconf rsync
+
+      - name: Create build user
+        run: |
+          useradd -m build
+          echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/build
+          chown -R build:build .
+
+      - name: Make directories
+        run: |
+          mkdir -p /home/build/monody/work /home/build/monody/out
+          chown -R build:build /home/build/monody
+
+      - name: Run Repo Build
+        run: |
+          chmod +x build.sh
+          sudo -u build ./build.sh repo
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          REMOTE_HOST_VAL="${{ secrets.REMOTE_HOST }}"
+          REMOTE_ADDR=$(echo "$REMOTE_HOST_VAL" | cut -d@ -f2)
+          ssh-keyscan -H "$REMOTE_ADDR" >> ~/.ssh/known_hosts
+
+      - name: Deploy Repository
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.REMOTE_HOST }} "mkdir -p /var/www/monody/repo/x86_64"
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r prebuilt_repo/* ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
+
+      - name: Upload Repo Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monody-repo
+          path: prebuilt_repo/

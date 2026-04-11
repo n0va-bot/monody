@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Users & Groups
+Comment=Manage system users and group membership
+Exec=/usr/bin/monody-users
+Icon=system-users
+Type=Application
+Categories=Settings;System;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;
+Keywords=user;account;password;group;admin;
