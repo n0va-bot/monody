@@ -1,0 +1,107 @@
+name: Build and Deploy Monody ISO
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-repo:
+    uses: ./.github/workflows/build-repo.yml
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+
+  build-iso:
+    needs: build-repo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    container:
+      image: archlinux:latest
+      options: --privileged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm \
+            base-devel git archiso vala vte3 gtk3 meson sudo sshpass \
+            squashfs-tools dosfstools mtools libisoburn openssh \
+            libwnck3 accountsservice dconf rsync grub efibootmgr
+
+      - name: Download Repo Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: monody-repo
+          path: prebuilt_repo/
+
+      - name: Create build user
+        run: |
+          useradd -m build
+          echo "build ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/build
+          chown -R build:build .
+
+      - name: Make directories
+        run: |
+          mkdir -p /home/build/monody/work /home/build/monody/out
+          chown -R build:build /home/build/monody
+
+      - name: Clear pacman cache
+        run: |
+          pacman -Scc --noconfirm
+          rm -rf /var/cache/pacman/pkg/*
+
+      - name: Run ISO Build
+        run: |
+          chmod +x build.sh
+          sudo -u build ./build.sh iso
+
+      - name: Export checksum
+        run: |
+          SHA=$(sha256sum /home/build/monody/out/monody-x86_64.iso | cut -d' ' -f1)
+          echo "ISO_SHA256=$SHA" >> $GITHUB_ENV
+          SIZE=$(du -h /home/build/monody/out/monody-x86_64.iso | cut -f1)
+          echo "ISO_SIZE=$SIZE" >> $GITHUB_ENV
+
+      - name: Upload ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: monody-iso
+          path: /home/build/monody/out/monody-x86_64.iso
+
+      - name: Create or Update Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Monody Nightly
+          body: |
+            Latest automated nightly build.
+
+            **Size:** ${{ env.ISO_SIZE }}
+            **SHA256:** `${{ env.ISO_SHA256 }}`
+          files: /home/build/monody/out/monody-x86_64.iso
+          prerelease: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update website checksum and link
+        run: |
+          sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">${{ env.ISO_SHA256 }}</code>|" website/index.html
+          sed -i "s|<a id=\"iso-download-link\" href=\"[^\"]*\"|<a id=\"iso-download-link\" href=\"https://github.com/n0va-bot/monody/releases/latest/download/monody-x86_64.iso\"|" website/index.html
+          sed -i "s|<span id=\"iso-size\" class=\"val hi\">.*</span>|<span id=\"iso-size\" class=\"val hi\">${{ env.ISO_SIZE }}</span>|" website/index.html
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          REMOTE_HOST_VAL="${{ secrets.REMOTE_HOST }}"
+          REMOTE_ADDR=$(echo "$REMOTE_HOST_VAL" | cut -d@ -f2)
+          ssh-keyscan -H "$REMOTE_ADDR" >> ~/.ssh/known_hosts
+
+      - name: Deploy Website
+        run: |
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r website/* \
+            ${{ secrets.REMOTE_HOST }}:/var/www/monody/

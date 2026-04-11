@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Welcome
+Comment=Set up Monody on first boot
+Exec=monody-welcome
+Icon=distributor-logo-monody
+Terminal=false
+Type=Application
+Categories=System;Utility;
+StartupNotify=true
+OnlyShowIn=XFCE;
+NoDisplay=false

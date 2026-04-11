@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Monody System Update
+
+BACKTITLE="Monody OS - Utility"
+TITLE="System Update"
+
+# Ask for confirmation
+dialog --backtitle "$BACKTITLE" \
+       --title "$TITLE" \
+       --yesno "Would you like to check for and install system updates now?" 10 60
+
+# Check exit status of dialog
+if [ $? -eq 0 ]; then
+    clear
+    topgrade -y -k
+else
+    clear
+    exit 0
+fi
