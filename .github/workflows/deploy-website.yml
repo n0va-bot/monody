@@ -1,0 +1,56 @@
+name: Deploy Website
+
+on:
+  push:
+    paths:
+      - 'website/**'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      iso_size:
+        type: string
+        required: false
+      iso_sha256:
+        type: string
+        required: false
+
+jobs:
+  deploy-website:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch latest release info
+        run: |
+          if [ -n "${{ inputs.iso_size }}" ] && [ -n "${{ inputs.iso_sha256 }}" ]; then
+            echo "ISO_SIZE=${{ inputs.iso_size }}" >> $GITHUB_ENV
+            echo "ISO_SHA256=${{ inputs.iso_sha256 }}" >> $GITHUB_ENV
+          else
+            RELEASE_JSON=$(curl -s https://api.github.com/repos/n0va-bot/monody/releases)
+            SIZE_BYTES=$(echo "$RELEASE_JSON" | jq -r '.[0].assets[0].size')
+            DIGEST=$(echo "$RELEASE_JSON" | jq -r '.[0].assets[0].digest' | sed 's/^sha256://')
+            SIZE_MB=$(echo "$SIZE_BYTES" | awk '{printf "%.0fM", $1/1048576}')
+            echo "ISO_SIZE=$SIZE_MB" >> $GITHUB_ENV
+            echo "ISO_SHA256=$DIGEST" >> $GITHUB_ENV
+          fi
+
+      - name: Update website checksum and link
+        run: |
+          sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">${{ env.ISO_SHA256 }}</code>|" website/index.html
+          sed -i "s|<a id=\"iso-download-link\" href=\"[^\"]*\"|<a id=\"iso-download-link\" href=\"https://github.com/n0va-bot/monody/releases/download/nightly/monody-x86_64.iso\"|" website/index.html
+          sed -i "s|<span id=\"iso-size\" class=\"val hi\">.*</span>|<span id=\"iso-size\" class=\"val hi\">${{ env.ISO_SIZE }}</span>|" website/index.html
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          REMOTE_HOST_VAL="${{ secrets.REMOTE_HOST }}"
+          REMOTE_ADDR=$(echo "$REMOTE_HOST_VAL" | cut -d@ -f2)
+          ssh-keyscan -H "$REMOTE_ADDR" >> ~/.ssh/known_hosts
+
+      - name: Deploy Website
+        run: |
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r website/* \
+            ${{ secrets.REMOTE_HOST }}:/var/www/monody/

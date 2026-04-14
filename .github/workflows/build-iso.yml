@@ -18,6 +18,9 @@ jobs:
     container:
       image: archlinux:latest
       options: --privileged
+    outputs:
+      iso_size: ${{ steps.export.outputs.size }}
+      iso_sha256: ${{ steps.export.outputs.sha256 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -58,11 +61,14 @@ jobs:
           sudo -u build ./build.sh iso
 
       - name: Export checksum
+        id: export
         run: |
           SHA=$(sha256sum /home/build/monody/out/monody-x86_64.iso | cut -d' ' -f1)
           echo "ISO_SHA256=$SHA" >> $GITHUB_ENV
+          echo "sha256=$SHA" >> $GITHUB_OUTPUT
           SIZE=$(du -h /home/build/monody/out/monody-x86_64.iso | cut -f1)
           echo "ISO_SIZE=$SIZE" >> $GITHUB_ENV
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
 
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
@@ -86,22 +92,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update website checksum and link
-        run: |
-          sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">${{ env.ISO_SHA256 }}</code>|" website/index.html
-          sed -i "s|<a id=\"iso-download-link\" href=\"[^\"]*\"|<a id=\"iso-download-link\" href=\"https://github.com/n0va-bot/monody/releases/download/nightly/monody-x86_64.iso\"|" website/index.html
-          sed -i "s|<span id=\"iso-size\" class=\"val hi\">.*</span>|<span id=\"iso-size\" class=\"val hi\">${{ env.ISO_SIZE }}</span>|" website/index.html
-
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          REMOTE_HOST_VAL="${{ secrets.REMOTE_HOST }}"
-          REMOTE_ADDR=$(echo "$REMOTE_HOST_VAL" | cut -d@ -f2)
-          ssh-keyscan -H "$REMOTE_ADDR" >> ~/.ssh/known_hosts
-
-      - name: Deploy Website
-        run: |
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r website/* \
-            ${{ secrets.REMOTE_HOST }}:/var/www/monody/
+  deploy-website:
+    needs: build-iso
+    uses: ./.github/workflows/deploy-website.yml
+    with:
+      iso_size: ${{ needs.build-iso.outputs.iso_size }}
+      iso_sha256: ${{ needs.build-iso.outputs.iso_sha256 }}
+    secrets: inherit
