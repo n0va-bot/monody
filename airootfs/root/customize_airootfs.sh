@@ -305,6 +305,9 @@ rm -f /usr/share/applications/xfce4-terminal-emulator.desktop
 echo "NoDisplay=true" >> /usr/share/applications/plank.desktop
 sed -i 's/^Icon=.*/Icon=folder/g' /usr/share/applications/thunar.desktop
 
+find /usr/share/icons/elementary -name 'distributor-logo*' -exec rm -f {} +
+find /usr/share/icons/elementary -name 'start-here*' -exec rm -f {} +
+
 gtk-update-icon-cache -f -t /usr/share/icons/elementary 2>/dev/null || true
 dconf update || true
 

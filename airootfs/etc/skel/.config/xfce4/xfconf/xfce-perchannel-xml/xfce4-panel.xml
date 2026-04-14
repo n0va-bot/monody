@@ -29,6 +29,7 @@
       <property name="position-categories-horizontal" type="bool" value="true"/>
       <property name="position-categories-alternate" type="bool" value="true"/>
       <property name="position-commands-altternate" type="bool" value="true"/>
+      <property name="button-icon" type="string" value="monody"/>
     </property>
     <property name="plugin-9" type="string" value="wckbuttons">
       <property name="show-maximized-only" type="bool" value="true"/>

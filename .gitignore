@@ -5,3 +5,4 @@ notes.md
 prebuilt_repo/
 aur_builds/
 src/*/*.pkg.tar.zst
+pacman.conf

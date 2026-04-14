@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monody Linux</title>
     <meta name="description" content="It fits on a CD">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -125,6 +126,16 @@
             margin-bottom: 0.25rem;
             line-height: 0.9;
             text-shadow: 0 0 10px rgba(122, 162, 247, 0.3);
+        }
+
+        .title-logo {
+            height: 0.82em;
+            width: 0.82em;
+            margin-left: 0.08em;
+            margin-right: 0.02em;
+            vertical-align: baseline;
+            transform: translateY(0.12em);
+            filter: drop-shadow(0 0 10px rgba(122, 162, 247, 0.3));
         }
 
         .tagline {
@@ -493,7 +504,7 @@
     <main class="container">
         <section class="hero">
             <div class="hero-inner">
-                <h1 class="title">monody</h1>
+                <h1 class="title">m<img src="logo.svg" alt="o" class="title-logo">nody</h1>
                 <p class="tagline">It fits on a CD</p>
 
                 <div class="download-box">
