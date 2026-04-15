@@ -65,6 +65,10 @@ ParallelDownloads = 5
 SigLevel = Never
 LocalFileSigLevel = Optional
 
+[monody]
+SigLevel = Optional TrustAll
+Server = file://$REPO_DIR
+
 [system]
 $MIRRORS
 
@@ -76,10 +80,6 @@ $MIRRORS
 
 [extra]
 Include = $EXTRA_MIRROR
-
-[monody]
-SigLevel = Optional TrustAll
-Server = file://$REPO_DIR
 EOF
     success "pacman.conf generated at $PROJ_DIR/pacman.conf"
 }
