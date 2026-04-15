@@ -1,6 +1,6 @@
 pkgname=monody-tools
-pkgver=1.0
-pkgrel=2
+pkgver=1.1
+pkgrel=1
 pkgdesc="Custom tools for Monody Linux (Welcome, Users, Updater)"
 arch=('x86_64')
 url="https://github.com/n0va-bot/monody"
@@ -31,7 +31,7 @@ package() {
   install -Dm755 monody-welcome "$pkgdir/usr/bin/monody-welcome"
   install -Dm755 monody-updater "$pkgdir/usr/bin/monody-updater"
   install -Dm755 monody-users "$pkgdir/usr/bin/monody-users"
-  
+
   install -Dm644 monody-welcome.desktop "$pkgdir/usr/share/applications/monody-welcome.desktop"
   install -Dm644 monody-users.desktop "$pkgdir/usr/share/applications/monody-users.desktop"
   install -Dm644 monody-updater.desktop "$pkgdir/usr/share/applications/monody-updater.desktop"
