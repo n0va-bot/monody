@@ -4,5 +4,7 @@ copy*
 notes.md
 prebuilt_repo/
 aur_builds/
+work/
+out/
 src/*/*.pkg.tar.zst
 pacman.conf

@@ -2,9 +2,9 @@
 
 # ── Configuration ───────────────────────────────────────────────────────────
 
-PROJ_DIR=$(pwd)
-WORK_DIR="$HOME/monody/work"
-OUT_DIR="$HOME/monody/out"
+PROJ_DIR="$(cd "$(dirname "$0")" && pwd)"
+WORK_DIR="$PROJ_DIR/work"
+OUT_DIR="$PROJ_DIR/out"
 REPO_DIR="$PROJ_DIR/prebuilt_repo"
 AUR_DIR="$PROJ_DIR/aur_builds"
 WEBSITE_FILE="$PROJ_DIR/website/index.html"

@@ -47,8 +47,8 @@ jobs:
 
       - name: Make directories
         run: |
-          mkdir -p /home/build/monody/work /home/build/monody/out
-          chown -R build:build /home/build/monody
+          mkdir -p work out
+          chown -R build:build .
 
       - name: Clear pacman cache
         run: |
@@ -63,10 +63,10 @@ jobs:
       - name: Export checksum
         id: export
         run: |
-          SHA=$(sha256sum /home/build/monody/out/monody-x86_64.iso | cut -d' ' -f1)
+          SHA=$(sha256sum out/monody-x86_64.iso | cut -d' ' -f1)
           echo "ISO_SHA256=$SHA" >> $GITHUB_ENV
           echo "sha256=$SHA" >> $GITHUB_OUTPUT
-          SIZE=$(du -h /home/build/monody/out/monody-x86_64.iso | cut -f1)
+          SIZE=$(du -h out/monody-x86_64.iso | cut -f1)
           echo "ISO_SIZE=$SIZE" >> $GITHUB_ENV
           echo "size=$SIZE" >> $GITHUB_OUTPUT
 
@@ -74,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: monody-iso
-          path: /home/build/monody/out/monody-x86_64.iso
+          path: out/monody-x86_64.iso
 
       - name: Create or Update Release
         uses: softprops/action-gh-release@v2
@@ -86,7 +86,7 @@ jobs:
 
             **Size:** ${{ env.ISO_SIZE }}
             **SHA256:** `${{ env.ISO_SHA256 }}`
-          files: /home/build/monody/out/monody-x86_64.iso
+          files: out/monody-x86_64.iso
           prerelease: true
           make_latest: true
         env:
