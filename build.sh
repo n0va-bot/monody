@@ -196,8 +196,6 @@ rm -f "$REPO_DIR"/*-debug*.pkg.tar.zst
 # ── Local Repository Update ───────────────────────────────────────────────────
 (
     cd "$REPO_DIR" || exit 1
-    log "Cleaning old packages..."
-    rm -f *.pkg.tar.zst
     log "Adding packages to the database..."
     rm -f monody.db.tar.gz monody.db monody.files.tar.gz monody.files
     repo-add monody.db.tar.gz *.pkg.tar.zst || error "Failed to update repository database"
