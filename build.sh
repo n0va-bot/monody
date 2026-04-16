@@ -103,27 +103,21 @@ success "Directories and configuration ready."
 if [[ "$BUILD_MODE" == "repo" || "$BUILD_MODE" == "all" ]]; then
 header "Building Local Packages"
 for pkg in monody-file-search-provider monody-hotcorners monody-tools monody; do
-    log "Checking local package $pkg ..."
+    log "Building $pkg ..."
     (
         cd "$PROJ_DIR/src/$pkg" || exit 1
 
         pkgver=$(grep "^pkgver=" PKGBUILD | cut -d= -f2 | tr -d '"' | tr -d "'")
         pkgrel=$(grep "^pkgrel=" PKGBUILD | cut -d= -f2 | tr -d '"' | tr -d "'")
-        EXISTING=$(ls "$REPO_DIR/${pkg}-${pkgver}-${pkgrel}-"*.pkg.tar.zst 2>/dev/null | head -1)
 
-        if [[ -f "$EXISTING" ]]; then
-            log "  $pkg is up to date ($pkgver-$pkgrel), skipping build."
+        rm -f *.pkg.tar.zst
+        if [[ "$pkg" == "monody" ]]; then
+            makepkg -cCd --noconfirm || error "Failed to build $pkg"
         else
-            log "  Building $pkg ..."
-            rm -f *.pkg.tar.zst
-            if [[ "$pkg" == "monody" ]]; then
-                makepkg -cCd --noconfirm || error "Failed to build $pkg"
-            else
-                makepkg -scC --noconfirm || error "Failed to build $pkg"
-            fi
-            log "  Copying $pkg to local repo ..."
-            cp *.pkg.tar.zst "$REPO_DIR/"
+            makepkg -scC --noconfirm || error "Failed to build $pkg"
         fi
+        log "  Copying $pkg to local repo ..."
+        cp *.pkg.tar.zst "$REPO_DIR/"
     ) || error "Error processing $pkg"
 done
 
