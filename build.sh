@@ -121,6 +121,8 @@ for pkg in monody-file-search-provider monody-hotcorners monody-tools monody; do
     ) || error "Error processing $pkg"
 done
 
+rm -f "$REPO_DIR"/*-debug*.pkg.tar.zst
+
 # ── AUR Package Updates ──────────────────────────────────────────────────────
 
 header "Checking/Cloning AUR Repositories"
@@ -184,15 +186,18 @@ for repo in "${AUR_REPOS[@]}"; do
                 log "  Copying $pkg_name to local repo ..."
                 cp *.pkg.tar.zst "$REPO_DIR/"
             fi
+            rm -f *-debug*.pkg.tar.zst
         ) || error "Error processing $pkg_name"
     fi
 done
 
-# ── Local Repository Update ──────────────────────────────────────────────────
+rm -f "$REPO_DIR"/*-debug*.pkg.tar.zst
 
-header "Updating Local Repository"
+# ── Local Repository Update ───────────────────────────────────────────────────
 (
     cd "$REPO_DIR" || exit 1
+    log "Cleaning old packages..."
+    rm -f *.pkg.tar.zst
     log "Adding packages to the database..."
     rm -f monody.db.tar.gz monody.db monody.files.tar.gz monody.files
     repo-add monody.db.tar.gz *.pkg.tar.zst || error "Failed to update repository database"
