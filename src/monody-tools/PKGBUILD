@@ -1,5 +1,5 @@
 pkgname=monody-tools
-pkgver=1.0.5
+pkgver=1.1.1
 pkgrel=1
 pkgdesc="Custom tools for Monody Linux"
 arch=('x86_64')
