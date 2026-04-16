@@ -51,6 +51,17 @@ jobs:
           chmod +x build.sh
           sudo -u build ./build.sh repo
 
+      - name: Clean old packages
+        run: |
+          cd prebuilt_repo || exit
+          [[ -f monody.db.tar.gz ]] && tar -tzf monody.db.tar.gz | grep -oP '^[^-]+' | sort -u > /tmp/current_pkgs
+          for pkg in *.pkg.tar.zst; do
+            name=${pkg%%-*}
+            if ! grep -qxF "$name" /tmp/current_pkgs 2>/dev/null; then
+              rm -f "$pkg"
+            fi
+          done
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -66,6 +77,8 @@ jobs:
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.REMOTE_HOST }} "rm -rf /var/www/monody/repo/x86_64/*"
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.REMOTE_HOST }} "mkdir -p /var/www/monody/repo/x86_64"
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.pkg.tar.zst ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.db.tar.gz ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.files.tar.gz ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
 
       - name: Upload Repo Artifact
         uses: actions/upload-artifact@v4
