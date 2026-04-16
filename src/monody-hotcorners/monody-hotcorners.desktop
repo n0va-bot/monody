@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Monody Hotcorners
+Comment=Screen corner trigger service
+Exec=/usr/bin/monody-hotcorner-service
+NoDisplay=true
+X-XFCE-Autostart-Override=true

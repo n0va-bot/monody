@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=File Search
+GenericName=File Search Provider
+Comment=Search for files on your computer
+Icon=system-file-manager
+Exec=/usr/bin/monody-file-search-provider
+NoDisplay=true
+Categories=Utility;

@@ -1,7 +1,7 @@
 pkgname=monody-tools
-pkgver=1.1
+pkgver=1.0.4
 pkgrel=1
-pkgdesc="Custom tools for Monody Linux (Welcome, Users, Updater)"
+pkgdesc="Custom tools for Monody Linux"
 arch=('x86_64')
 url="https://github.com/n0va-bot/monody"
 license=('ISC')
@@ -23,8 +23,8 @@ sha256sums=('SKIP'
 
 build() {
   valac --pkg gtk+-3.0 --pkg vte-2.91 monody-welcome.vala -o monody-welcome
-  valac --pkg gtk+-3.0 --pkg vte-2.91 monody-updater.vala -o monody-updater
-  valac --pkg gtk+-3.0 --pkg posix monody-users.vala -o monody-users
+  valac --pkg gtk+-3.0 --pkg vte-2.91 --pkg x11 monody-updater.vala -o monody-updater
+  valac --pkg gtk+-3.0 --pkg posix --pkg x11 monody-users.vala -o monody-users
 }
 
 package() {

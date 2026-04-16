@@ -1,11 +1,11 @@
 pkgname=monody
-pkgver=1.0
+pkgver=1.0.1
 pkgrel=1
 pkgdesc="Monody Linux Metapackage"
 arch=('any')
 url="https://monody.krzak.org"
 license=('ISC')
-depends=('monody-tools')
+depends=('monody-tools' 'monody-file-search-provider' 'monody-hotcorners')
 
 build() {
   true

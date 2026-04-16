@@ -1,0 +1,29 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<channel name="monody" version="1.0">
+  <property name="hotcorners" type="empty">
+    <property name="sensitivity" type="int" value="5"/>
+    <property name="pressure-duration" type="int" value="300"/>
+    <property name="top-left" type="empty">
+      <property name="action" type="string" value="xfdashboard"/>
+      <property name="command" type="string" value=""/>
+    </property>
+    <property name="top-right" type="empty">
+      <property name="action" type="string" value="none"/>
+      <property name="command" type="string" value=""/>
+    </property>
+    <property name="bottom-left" type="empty">
+      <property name="action" type="string" value="none"/>
+      <property name="command" type="string" value=""/>
+    </property>
+    <property name="bottom-right" type="empty">
+      <property name="action" type="string" value="none"/>
+      <property name="command" type="string" value=""/>
+    </property>
+  </property>
+  <property name="file-search" type="empty">
+    <property name="directories" type="string" value=""/>
+    <property name="max-depth" type="int" value="3"/>
+    <property name="max-results" type="int" value="10"/>
+    <property name="show-hidden" type="bool" value="false"/>
+  </property>
+</channel>

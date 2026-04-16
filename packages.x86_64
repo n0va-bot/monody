@@ -67,6 +67,7 @@ xfce4-settings
 xfce4-terminal
 xfconf
 xfdesktop
+xfdashboard
 xfwm4
 thunar-archive-plugin
 file-roller
@@ -88,3 +89,6 @@ plank
 pavucontrol
 monody
 monody-tools
+monody-file-search-provider
+monody-hotcorners
+wmctrl

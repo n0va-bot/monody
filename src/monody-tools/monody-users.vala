@@ -84,7 +84,7 @@ public class UserRow : Gtk.ListBoxRow {
     }
 }
 
-public class UserManager : Gtk.Window {
+public class UserManager : Gtk.Box {
 
     private Gtk.ListBox list;
     private UserInfo? current = null;
@@ -119,9 +119,7 @@ public class UserManager : Gtk.Window {
     """;
 
     construct {
-        this.set_default_size (760, 520);
-        this.window_position = Gtk.WindowPosition.CENTER;
-        this.destroy.connect (Gtk.main_quit);
+        this.orientation = Gtk.Orientation.HORIZONTAL;
 
         current_username = Environment.get_user_name ();
 
@@ -144,8 +142,6 @@ public class UserManager : Gtk.Window {
         add_btn.get_style_context ().add_class ("suggested-action");
         add_btn.clicked.connect (show_add_dialog);
         hb.pack_start (add_btn);
-
-        this.set_titlebar (hb);
 
         var paned = new Gtk.Paned (Gtk.Orientation.HORIZONTAL);
 
@@ -306,7 +302,7 @@ public class UserManager : Gtk.Window {
         stack.visible_child_name = "empty";
         paned.pack2 (stack, true, false);
         paned.position = 240;
-        this.add (paned);
+        this.pack_start (paned, true, true, 0);
 
         reload_users ();
     }
@@ -462,7 +458,7 @@ public class UserManager : Gtk.Window {
     private void pick_avatar () {
         if (current == null) return;
 
-        var fc = new Gtk.FileChooserDialog ("Select Profile Picture", this,
+        var fc = new Gtk.FileChooserDialog ("Select Profile Picture", this.get_toplevel () as Gtk.Window,
             Gtk.FileChooserAction.OPEN,
             "_Cancel", Gtk.ResponseType.CANCEL,
             "_Open", Gtk.ResponseType.ACCEPT);
@@ -495,7 +491,7 @@ public class UserManager : Gtk.Window {
 
     private void show_add_dialog () {
         var d = new Gtk.Dialog.with_buttons (
-            "Add User", this,
+            "Add User", this.get_toplevel () as Gtk.Window,
             Gtk.DialogFlags.MODAL,
             "_Cancel", Gtk.ResponseType.CANCEL,
             "_Create", Gtk.ResponseType.OK);
@@ -608,7 +604,7 @@ public class UserManager : Gtk.Window {
         bool is_self = (current.name == current_username);
 
         var d = new Gtk.Dialog.with_buttons (
-            "Change Password", this,
+            "Change Password", this.get_toplevel () as Gtk.Window,
             Gtk.DialogFlags.MODAL,
             "_Cancel", Gtk.ResponseType.CANCEL,
             "_Apply", Gtk.ResponseType.OK);
@@ -683,7 +679,7 @@ public class UserManager : Gtk.Window {
     private void show_delete_dialog () {
         if (current == null) return;
 
-        var d = new Gtk.MessageDialog (this, Gtk.DialogFlags.MODAL,
+        var d = new Gtk.MessageDialog (this.get_toplevel () as Gtk.Window, Gtk.DialogFlags.MODAL,
             Gtk.MessageType.WARNING, Gtk.ButtonsType.NONE,
             "Delete user %s?", current.display);
         d.secondary_text = "This action cannot be undone.";
@@ -735,7 +731,7 @@ public class UserManager : Gtk.Window {
     }
 
     private void warn (string msg) {
-        var d = new Gtk.MessageDialog (this, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, "%s", msg);
+        var d = new Gtk.MessageDialog (this.get_toplevel () as Gtk.Window, Gtk.DialogFlags.MODAL, Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, "%s", msg);
         d.run (); d.destroy ();
     }
 }
@@ -746,8 +742,44 @@ int main (string[] args) {
         return 1;
     }
     Gtk.init (ref args);
+
+    long socket_id = 0;
+    for (int i = 0; i < args.length; i++) {
+        if ((args[i] == "--socket-id" || args[i] == "-s") && i + 1 < args.length) {
+            socket_id = long.parse (args[i + 1]);
+        } else if (args[i].has_prefix ("--socket-id=")) {
+            socket_id = long.parse (args[i].substring (12));
+        } else if (args[i].has_prefix ("-s=")) {
+            socket_id = long.parse (args[i].substring (3));
+        }
+    }
+
     var w = new UserManager ();
-    w.show_all ();
+    w.vexpand = true;
+    w.hexpand = true;
+
+    if (socket_id != 0) {
+        var plug = new Gtk.Plug ((X.Window) socket_id);
+        plug.destroy.connect (Gtk.main_quit);
+        plug.add (w);
+        plug.show_all ();
+    } else {
+        var window = new Gtk.Window ();
+        window.title = "Users";
+        window.set_default_size (600, 500);
+        window.window_position = Gtk.WindowPosition.CENTER;
+        window.destroy.connect (Gtk.main_quit);
+
+        var hb = new Gtk.HeaderBar ();
+        hb.title = "Users";
+        hb.subtitle = "Monody Desktop";
+        hb.show_close_button = true;
+        window.set_titlebar (hb);
+
+        window.add (w);
+        window.show_all ();
+    }
+
     Gtk.main ();
     return 0;
 }

@@ -1,7 +1,7 @@
 using Gtk;
 using Vte;
 
-public class UpdaterWindow : Gtk.Window {
+public class UpdaterWindow : Gtk.Box {
 
     private bool running = false;
     private bool update_succeeded = false;
@@ -16,18 +16,9 @@ public class UpdaterWindow : Gtk.Window {
     private Gtk.Image finish_icon;
 
     public UpdaterWindow (bool auto_start, bool auto_finish) {
+        Object (orientation: Gtk.Orientation.VERTICAL);
         this.auto_start = auto_start;
         this.auto_finish = auto_finish;
-
-        this.set_default_size (820, 540);
-        this.window_position = Gtk.WindowPosition.CENTER;
-        this.destroy.connect (Gtk.main_quit);
-
-        var hb = new Gtk.HeaderBar ();
-        hb.title = "System Update";
-        hb.subtitle = "Monody OS";
-        hb.show_close_button = true;
-        this.set_titlebar (hb);
 
         term = new Vte.Terminal ();
         term.set_scroll_on_output (true);
@@ -93,7 +84,9 @@ public class UpdaterWindow : Gtk.Window {
         finish_box.pack_start (finish_btn, false, false, 0);
 
         finish_btn.clicked.connect (() => {
-            this.destroy ();
+            var toplevel = this.get_toplevel () as Gtk.Window;
+            if (toplevel != null) toplevel.destroy ();
+            else Gtk.main_quit ();
         });
 
         stack = new Gtk.Stack ();
@@ -101,7 +94,7 @@ public class UpdaterWindow : Gtk.Window {
         stack.add_named (start_box, "start");
         stack.add_named (term_sw, "term");
         stack.add_named (finish_box, "finish");
-        this.add (stack);
+        this.pack_start (stack, true, true, 0);
 
         if (auto_start) {
             stack.visible_child_name = "term";
@@ -131,7 +124,9 @@ public class UpdaterWindow : Gtk.Window {
             }
 
             if (auto_finish) {
-                this.destroy ();
+                var toplevel = this.get_toplevel () as Gtk.Window;
+                if (toplevel != null) toplevel.destroy ();
+                else Gtk.main_quit ();
             } else {
                 stack.visible_child_name = "finish";
             }
@@ -170,11 +165,12 @@ int main (string[] args) {
     bool auto_start = false;
     bool auto_finish = false;
     bool show_help = false;
+    string? socket_id_str = null;
 
     var opt_context = new GLib.OptionContext ();
     opt_context.add_group (Gtk.get_option_group (true));
 
-    var options = new GLib.OptionEntry[3];
+    var options = new GLib.OptionEntry[4];
     options[0].long_name = "help";
     options[0].short_name = 'h';
     options[0].arg = GLib.OptionArg.NONE;
@@ -182,19 +178,26 @@ int main (string[] args) {
     options[0].description = "Show help";
 
     options[1].long_name = "start";
-    options[1].short_name = 's';
+    options[1].short_name = 0;
     options[1].arg = GLib.OptionArg.NONE;
     options[1].arg_data = &auto_start;
     options[1].description = "Skip start screen";
 
     options[2].long_name = "finish";
-    options[2].short_name = 'f';
+    options[2].short_name = 0;
     options[2].arg = GLib.OptionArg.NONE;
     options[2].arg_data = &auto_finish;
     options[2].description = "Close window when finished";
 
+    options[3].long_name = "socket-id";
+    options[3].short_name = 's';
+    options[3].arg = GLib.OptionArg.STRING;
+    options[3].arg_data = &socket_id_str;
+    options[3].description = "Settings Manager socket ID";
+
     opt_context.add_main_entries (options, null);
 
+    opt_context.set_ignore_unknown_options (true);
     try {
         opt_context.parse (ref args);
     } catch (Error e) {
@@ -205,12 +208,29 @@ int main (string[] args) {
     if (show_help) {
         print ("Usage: monody-updater [OPTIONS]\n");
         print ("  -h, --help      Show this help\n");
-        print ("  -s, --start     Start update on launch, skip start screen\n");
-        print ("  -f, --finish    Close window when finished\n");
+        print ("  --start         Start update on launch, skip start screen\n");
+        print ("  --finish    Close window when finished\n");
         return 0;
     }
 
     Gtk.init (ref args);
+
+    long socket_id = 0;
+    if (socket_id_str != null) {
+        if (socket_id_str.has_prefix ("=")) {
+            socket_id = long.parse (socket_id_str.substring (1));
+        } else {
+            socket_id = long.parse (socket_id_str);
+        }
+    }
+    
+    for (int i = 0; i < args.length; i++) {
+        if (args[i] == "--socket-id" && i + 1 < args.length) {
+            socket_id = long.parse (args[i + 1]);
+        } else if (args[i].has_prefix ("--socket-id=")) {
+            socket_id = long.parse (args[i].substring (12));
+        }
+    }
 
     string css_text = """
         .updater-terminal { padding: 4px; }
@@ -234,7 +254,31 @@ int main (string[] args) {
     } catch (Error e) {}
 
     var win = new UpdaterWindow (auto_start, auto_finish);
-    win.show_all ();
+    win.vexpand = true;
+    win.hexpand = true;
+
+    if (socket_id != 0) {
+        var plug = new Gtk.Plug ((X.Window) socket_id);
+        plug.destroy.connect (Gtk.main_quit);
+        plug.add (win);
+        plug.show_all ();
+    } else {
+        var window = new Gtk.Window ();
+        window.title = "System Update";
+        window.set_default_size (820, 540);
+        window.window_position = Gtk.WindowPosition.CENTER;
+        window.destroy.connect (Gtk.main_quit);
+
+        var hb = new Gtk.HeaderBar ();
+        hb.title = "System Update";
+        hb.subtitle = "Monody OS";
+        hb.show_close_button = true;
+        window.set_titlebar (hb);
+
+        window.add (win);
+        window.show_all ();
+    }
+
     Gtk.main ();
     return 0;
 }

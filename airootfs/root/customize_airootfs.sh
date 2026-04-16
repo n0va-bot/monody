@@ -41,9 +41,13 @@ cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml \
 cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml \
    /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
 cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-screensaver.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-screensaver.xml 2>/dev/null || true
+   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-screensaver.xml
 cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml 2>/dev/null || true
+   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
+cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfdashboard.xml \
+   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfdashboard.xml
+cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/monody.xml \
+   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/monody.xml
 
 # STRIPPING
 
@@ -275,7 +279,7 @@ rm -rf /usr/lib/firefox/browser/chrome/icons/default
 
 # Strip large icons
 find /usr/share/icons/elementary -type d -name '*@2x*' -exec rm -rf {} + 2>/dev/null
-find /usr/share/icons/elementary -type d -name '128*' -o -name '256*' -o -name '512*' -exec rm -rf {} + 2>/dev/null
+find /usr/share/icons/elementary -type d -name '64*' -o -name '96*' -o -name '128*' -o -name '256*' -o -name '512*' -exec rm -rf {} + 2>/dev/null
 find /usr/share/icons/Adwaita -mindepth 1 -maxdepth 1 ! -name 'cursors' ! -name 'index.theme' -exec rm -rf {} + 2>/dev/null
 
 rm -rf /usr/lib/firmware/intel/ibt-*
@@ -289,6 +293,10 @@ rm -rf /usr/lib/firmware/mellanox
 rm -rf /usr/lib/firmware/mrvl
 rm -rf /usr/lib/firmware/qcom
 rm -rf /usr/lib/firmware/brcm/*bt*
+rm -rf /usr/lib/firmware/ath11k
+rm -rf /usr/lib/firmware/ath12k
+rm -rf /usr/lib/firmware/xe
+
 
 # Clear databases
 rm -rf /var/lib/pacman/sync/*
@@ -302,7 +310,12 @@ rm -f /usr/share/applications/xfce4-mail-reader.desktop
 rm -f /usr/share/applications/xfce4-file-manager.desktop
 rm -f /usr/share/applications/xfce4-terminal-emulator.desktop
 
+echo "StartupWMClass=firefox-esr" >> /usr/share/applications/firefox-esr.desktop
+
 echo "NoDisplay=true" >> /usr/share/applications/plank.desktop
+echo "NoDisplay=true" >> /usr/share/applications/org.xfce.xfdashboard.desktop
+echo "NoDisplay=true" >> /usr/share/applications/org.xfce.xfdashboard-settings.desktop
+
 sed -i 's/^Icon=.*/Icon=folder/g' /usr/share/applications/thunar.desktop
 
 find /usr/share/icons/elementary -name 'distributor-logo*' -exec rm -f {} +

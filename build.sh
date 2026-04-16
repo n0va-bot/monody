@@ -102,7 +102,7 @@ success "Directories and configuration ready."
 
 if [[ "$BUILD_MODE" == "repo" || "$BUILD_MODE" == "all" ]]; then
 header "Building Local Packages"
-for pkg in monody-tools monody; do
+for pkg in monody-file-search-provider monody-hotcorners monody-tools monody; do
     log "Checking local package $pkg ..."
     (
         cd "$PROJ_DIR/src/$pkg" || exit 1
@@ -131,6 +131,9 @@ done
 
 header "Checking/Cloning AUR Repositories"
 AUR_REPOS=(
+    "https://aur.archlinux.org/cogl.git"
+    "https://aur.archlinux.org/clutter.git"
+    "https://aur.archlinux.org/xfdashboard.git"
     "https://aur.archlinux.org/paru.git"
     "https://aur.archlinux.org/topgrade-bin.git"
     "https://aur.archlinux.org/vala-panel-appmenu.git"
@@ -157,9 +160,10 @@ for repo in "${AUR_REPOS[@]}"; do
 done
 
 header "Updating AUR Packages"
-for dir in "$AUR_DIR"/*; do
+for repo in "${AUR_REPOS[@]}"; do
+    pkg_name=$(basename "$repo" .git)
+    dir="$AUR_DIR/$pkg_name"
     if [ -d "$dir" ]; then
-        pkg_name=$(basename "$dir")
         log "Checking $pkg_name ..."
         (
             cd "$dir" || exit 1
@@ -178,7 +182,11 @@ for dir in "$AUR_DIR"/*; do
             else
                 log "  Update detected or package missing for $pkg_name. Building..."
                 rm -f *.pkg.tar.zst
-                makepkg -scC --noconfirm || error "Failed to build $pkg_name"
+                if [[ "$pkg_name" == "cogl" || "$pkg_name" == "clutter" ]]; then
+                    makepkg -sciC --noconfirm || error "Failed to build $pkg_name"
+                else
+                    makepkg -scC --noconfirm || error "Failed to build $pkg_name"
+                fi
                 log "  Copying $pkg_name to local repo ..."
                 cp *.pkg.tar.zst "$REPO_DIR/"
             fi
@@ -227,19 +235,6 @@ success "SHA256: $SHA256"
 
 ISO_SIZE=$(du -h "$ISO_FINAL" | cut -f1)
 
-# ── Update Website ───────────────────────────────────────────────────────────
-
-if [[ -f "$WEBSITE_FILE" ]]; then
-    log "Updating website references..."
-
-    sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">$SHA256</code>|" "$WEBSITE_FILE"
-    sed -i "s|<span id=\"iso-size\" class=\"val hi\">.*</span>|<span id=\"iso-size\" class=\"val hi\">$ISO_SIZE</span>|" "$WEBSITE_FILE"
-
-    success "Website synchronized ($(basename "$ISO_FINAL"), $ISO_SIZE)"
-else
-    log "WARNING: Website file not found, skipping update"
-fi
-
 # ── Summary ──────────────────────────────────────────────────────────────────
 
 ISO_BYTES=$(stat -c%s "$ISO_FINAL")
@@ -253,7 +248,7 @@ success "SHA256: $SHA256"
 if [ "$ISO_BYTES" -gt "$LIMIT_BYTES" ]; then
     echo -e "${RED}╔══════════════════════════════════════════════════════╗${NC}"
     echo -e "${RED}║ WARNING: ISO SIZE EXCEEDS 700MB CD LIMIT!            ║${NC}"
-    echo -e "${RED}║ Current size: $ISO_SIZE                              ║${NC}"
+    echo -e "${RED}║ Current size: $ISO_SIZE                                   ║${NC}"
     echo -e "${RED}╚══════════════════════════════════════════════════════╝${NC}"
 else
     echo ""

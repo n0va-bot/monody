@@ -6,4 +6,5 @@ Icon=system-software-update
 Terminal=false
 Type=Application
 Categories=Settings;System;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;
+X-XfcePluggable=true
 Keywords=update;upgrade;topgrade;

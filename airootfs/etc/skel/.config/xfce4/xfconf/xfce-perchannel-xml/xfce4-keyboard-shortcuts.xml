@@ -8,6 +8,7 @@
       <property name="&lt;Super&gt;e" type="string" value="thunar"/>
       <property name="&lt;Super&gt;b" type="string" value="firefox"/>
       <property name="&lt;Super&gt;t" type="string" value="xfce4-terminal"/>
+      <property name="&lt;Super&gt;Tab" type="string" value="sh -c 'pgrep -x xfdashboard &amp;&amp; xfdashboard -q || xfdashboard'"/>
     </property>
   </property>
   <property name="xfwm4" type="empty">

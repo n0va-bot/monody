@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Hotcorners
+GenericName=Hotcorner Settings
+Comment=Configure screen corner actions
+Icon=preferences-desktop-display
+Exec=/usr/bin/monody-hotcorner-settings
+Categories=Settings;DesktopSettings;X-XFCE;X-XFCE-SettingsDialog;X-XFCE-HardwareSettings;
+X-XfcePluggable=true

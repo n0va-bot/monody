@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=File Search
+GenericName=File Search Settings
+Comment=Configure search directories and options
+Icon=system-search
+Exec=/usr/bin/monody-file-search-settings
+Categories=Settings;DesktopSettings;X-XFCE;X-XFCE-SettingsDialog;X-XFCE-PersonalSettings;
+X-XfcePluggable=true

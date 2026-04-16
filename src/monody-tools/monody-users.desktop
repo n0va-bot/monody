@@ -5,4 +5,5 @@ Exec=/usr/bin/monody-users
 Icon=system-users
 Type=Application
 Categories=Settings;System;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;
+X-XfcePluggable=true
 Keywords=user;account;password;group;admin;

@@ -1,0 +1,57 @@
+pkgname=monody-file-search-provider
+pkgver=1.0.1
+pkgrel=1
+pkgdesc="File search provider for Xfdashboard (and other)"
+arch=('x86_64')
+url="https://github.com/n0va-bot/monody"
+license=('ISC')
+depends=('glib2' 'gtk3' 'xfconf')
+makedepends=('vala')
+
+source=("monody-file-search-provider.vala"
+        "monody-file-search-settings.vala"
+        "monody-file-search-provider.desktop"
+        "monody-file-search-settings.desktop"
+        "monody-file-search-provider.ini"
+        "org.monody.FileSearch.service"
+        "xfconf.vapi")
+sha256sums=('SKIP'
+            'SKIP'
+            'SKIP'
+            'SKIP'
+            'SKIP'
+            'SKIP'
+            'SKIP')
+
+build() {
+  valac --pkg gio-2.0 \
+    xfconf.vapi \
+    monody-file-search-provider.vala \
+    -X -lxfconf-0 -X -I/usr/include/xfce4/xfconf-0 \
+    -X -I/usr/include/glib-2.0 -X -I/usr/lib/glib-2.0/include \
+    -o monody-file-search-provider
+
+  valac --pkg gtk+-3.0 \
+    xfconf.vapi \
+    monody-file-search-settings.vala \
+    -X -lxfconf-0 -X -I/usr/include/xfce4/xfconf-0 \
+    -X -I/usr/include/glib-2.0 -X -I/usr/lib/glib-2.0/include \
+    -o monody-file-search-settings
+}
+
+package() {
+  install -Dm755 monody-file-search-provider "$pkgdir/usr/bin/monody-file-search-provider"
+  install -Dm755 monody-file-search-settings "$pkgdir/usr/bin/monody-file-search-settings"
+
+  install -Dm644 monody-file-search-provider.desktop \
+    "$pkgdir/usr/share/applications/monody-file-search-provider.desktop"
+
+  install -Dm644 monody-file-search-settings.desktop \
+    "$pkgdir/usr/share/applications/monody-file-search-settings.desktop"
+
+  install -Dm644 monody-file-search-provider.ini \
+    "$pkgdir/usr/share/gnome-shell/search-providers/monody-file-search-provider.ini"
+
+  install -Dm644 org.monody.FileSearch.service \
+    "$pkgdir/usr/share/dbus-1/services/org.monody.FileSearch.service"
+}
