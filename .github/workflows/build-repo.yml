@@ -70,6 +70,7 @@ jobs:
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.files.tar.gz ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.db.* ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
           scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/monody.db ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/monody.files ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
 
       - name: Upload Repo Artifact
         uses: actions/upload-artifact@v4
