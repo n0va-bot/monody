@@ -6,15 +6,17 @@ arch=('x86_64')
 url="https://github.com/n0va-bot/monody"
 license=('ISC')
 depends=('gtk3' 'vte3' 'polkit' 'accountsservice')
-makedepends=('vala')
+makedepends=('vala' 'meson' 'ninja')
 
 source=("monody-welcome.vala"
         "monody-updater.vala"
         "monody-users.vala"
         "monody-welcome.desktop"
         "monody-users.desktop"
-        "monody-updater.desktop")
+        "monody-updater.desktop"
+        "meson.build")
 sha256sums=('SKIP'
+            'SKIP'
             'SKIP'
             'SKIP'
             'SKIP'
@@ -22,15 +24,12 @@ sha256sums=('SKIP'
             'SKIP')
 
 build() {
-  valac --pkg gtk+-3.0 --pkg vte-2.91 monody-welcome.vala -o monody-welcome
-  valac --pkg gtk+-3.0 --pkg vte-2.91 --pkg x11 monody-updater.vala -o monody-updater
-  valac --pkg gtk+-3.0 --pkg posix --pkg x11 monody-users.vala -o monody-users
+  arch-meson . build
+  meson compile -C build
 }
 
 package() {
-  install -Dm755 monody-welcome "$pkgdir/usr/bin/monody-welcome"
-  install -Dm755 monody-updater "$pkgdir/usr/bin/monody-updater"
-  install -Dm755 monody-users "$pkgdir/usr/bin/monody-users"
+  DESTDIR="$pkgdir" meson install -C build
 
   install -Dm644 monody-welcome.desktop "$pkgdir/usr/share/applications/monody-welcome.desktop"
   install -Dm644 monody-users.desktop "$pkgdir/usr/share/applications/monody-users.desktop"

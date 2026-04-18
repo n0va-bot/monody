@@ -6,38 +6,28 @@ arch=('x86_64')
 url="https://github.com/n0va-bot/monody"
 license=('ISC')
 depends=('gtk3' 'xfconf' 'wmctrl')
-makedepends=('vala')
+makedepends=('vala' 'meson' 'ninja')
 
 source=("monody-hotcorner-service.vala"
         "monody-hotcorner-settings.vala"
         "monody-hotcorner-settings.desktop"
         "monody-hotcorners.desktop"
-        "xfconf.vapi")
+        "xfconf.vapi"
+        "meson.build")
 sha256sums=('SKIP'
+            'SKIP'
             'SKIP'
             'SKIP'
             'SKIP'
             'SKIP')
 
 build() {
-  valac --pkg gtk+-3.0 --pkg gdk-3.0 \
-    xfconf.vapi \
-    monody-hotcorner-service.vala \
-    -X -lxfconf-0 -X -lm -X -I/usr/include/xfce4/xfconf-0 \
-    -X -I/usr/include/glib-2.0 -X -I/usr/lib/glib-2.0/include \
-    -o monody-hotcorner-service
-
-  valac --pkg gtk+-3.0 --pkg x11 \
-    xfconf.vapi \
-    monody-hotcorner-settings.vala \
-    -X -lxfconf-0 -X -I/usr/include/xfce4/xfconf-0 \
-    -X -I/usr/include/glib-2.0 -X -I/usr/lib/glib-2.0/include \
-    -o monody-hotcorner-settings
+  arch-meson . build
+  meson compile -C build
 }
 
 package() {
-  install -Dm755 monody-hotcorner-service "$pkgdir/usr/bin/monody-hotcorner-service"
-  install -Dm755 monody-hotcorner-settings "$pkgdir/usr/bin/monody-hotcorner-settings"
+  DESTDIR="$pkgdir" meson install -C build
 
   install -Dm644 monody-hotcorner-settings.desktop \
     "$pkgdir/usr/share/applications/monody-hotcorner-settings.desktop"

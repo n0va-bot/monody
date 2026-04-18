@@ -6,7 +6,7 @@ arch=('x86_64')
 url="https://github.com/n0va-bot/monody"
 license=('ISC')
 depends=('glib2' 'gtk3' 'xfconf')
-makedepends=('vala')
+makedepends=('vala' 'meson' 'ninja')
 
 source=("monody-file-search-provider.vala"
         "monody-file-search-settings.vala"
@@ -14,8 +14,10 @@ source=("monody-file-search-provider.vala"
         "monody-file-search-settings.desktop"
         "monody-file-search-provider.ini"
         "org.monody.FileSearch.service"
-        "xfconf.vapi")
+        "xfconf.vapi"
+        "meson.build")
 sha256sums=('SKIP'
+            'SKIP'
             'SKIP'
             'SKIP'
             'SKIP'
@@ -24,24 +26,12 @@ sha256sums=('SKIP'
             'SKIP')
 
 build() {
-  valac --pkg gio-2.0 \
-    xfconf.vapi \
-    monody-file-search-provider.vala \
-    -X -lxfconf-0 -X -I/usr/include/xfce4/xfconf-0 \
-    -X -I/usr/include/glib-2.0 -X -I/usr/lib/glib-2.0/include \
-    -o monody-file-search-provider
-
-  valac --pkg gtk+-3.0 \
-    xfconf.vapi \
-    monody-file-search-settings.vala \
-    -X -lxfconf-0 -X -I/usr/include/xfce4/xfconf-0 \
-    -X -I/usr/include/glib-2.0 -X -I/usr/lib/glib-2.0/include \
-    -o monody-file-search-settings
+  arch-meson . build
+  meson compile -C build
 }
 
 package() {
-  install -Dm755 monody-file-search-provider "$pkgdir/usr/bin/monody-file-search-provider"
-  install -Dm755 monody-file-search-settings "$pkgdir/usr/bin/monody-file-search-settings"
+  DESTDIR="$pkgdir" meson install -C build
 
   install -Dm644 monody-file-search-provider.desktop \
     "$pkgdir/usr/share/applications/monody-file-search-provider.desktop"

@@ -138,7 +138,7 @@ public class UpdaterWindow : Gtk.Box {
     private void trigger_update () {
         if (running) return;
         running = true;
-        
+
         stack.visible_child_name = "term";
         term.reset (true, true);
 
@@ -223,7 +223,7 @@ int main (string[] args) {
             socket_id = long.parse (socket_id_str);
         }
     }
-    
+
     for (int i = 0; i < args.length; i++) {
         if (args[i] == "--socket-id" && i + 1 < args.length) {
             socket_id = long.parse (args[i + 1]);
@@ -234,11 +234,11 @@ int main (string[] args) {
 
     string css_text = """
         .updater-terminal { padding: 4px; }
-        .big-start-btn { 
-            font-size: 24px; 
-            font-weight: bold; 
-            min-height: 80px; 
-            min-width: 280px; 
+        .big-start-btn {
+            font-size: 24px;
+            font-weight: bold;
+            min-height: 80px;
+            min-width: 280px;
             border-radius: 12px;
         }
         .success-title { color: #50fa7b; }
