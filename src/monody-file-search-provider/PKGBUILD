@@ -1,6 +1,6 @@
 pkgname=monody-file-search-provider
 pkgver=1.1.1
-pkgrel=1
+pkgrel=2
 pkgdesc="File search provider for Xfdashboard (and other)"
 arch=('x86_64')
 url="https://github.com/n0va-bot/monody"

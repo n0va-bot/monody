@@ -8,7 +8,6 @@
     <property name="cycle_windows_key" type="string" value="&lt;Alt&gt;Tab"/>
     <property name="cycle_reverse_windows_key" type="string" value="&lt;Shift&gt;&lt;Alt&gt;Tab"/>
     <property name="close_window_key" type="string" value="&lt;Alt&gt;F4"/>
-    <property name="close_window_key" type="string" value="&lt;Super&gt;q"/>
     <property name="maximize_window_key" type="string" value="&lt;Alt&gt;F10"/>
     <property name="minimize_window_key" type="string" value="&lt;Alt&gt;F9"/>
     <property name="show_desktop_key" type="string" value="&lt;Super&gt;d"/>
@@ -17,5 +16,6 @@
     <property name="tile_left_key" type="string" value="&lt;Super&gt;Left"/>
     <property name="tile_right_key" type="string" value="&lt;Super&gt;Right"/>
     <property name="show_dock_shadow" type="bool" value="false"/>
+    <property name="workspace_count" type="int" value="1"/>
   </property>
 </channel>

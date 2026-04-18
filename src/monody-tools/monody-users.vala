@@ -133,7 +133,6 @@ public class UserManager : Gtk.Box {
 
         var hb = new Gtk.HeaderBar ();
         hb.title = "Users & Groups";
-        hb.subtitle = "Monody OS";
         hb.show_close_button = true;
 
         var add_btn = new Gtk.Button.with_label ("Add User");
@@ -772,7 +771,6 @@ int main (string[] args) {
 
         var hb = new Gtk.HeaderBar ();
         hb.title = "Users";
-        hb.subtitle = "Monody Desktop";
         hb.show_close_button = true;
         window.set_titlebar (hb);
 

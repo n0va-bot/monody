@@ -228,7 +228,6 @@ int main (string[] args) {
 
         var hb = new Gtk.HeaderBar ();
         hb.title = "Hotcorners";
-        hb.subtitle = "Monody Desktop";
         hb.show_close_button = true;
         window.set_titlebar (hb);
 

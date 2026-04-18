@@ -1,25 +1,17 @@
 <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
     <defs>
-        <clipPath id="c6-clip">
+        <clipPath id="c-clip">
             <circle cx="100" cy="100" r="80"/>
         </clipPath>
     </defs>
     <circle cx="100" cy="100" r="96" fill="#1a1b26"/>
     <circle cx="100" cy="100" r="80" fill="none" stroke="#7aa2f7" stroke-width="3"/>
-    <circle cx="100" cy="100" r="88" fill="none" stroke="#bb9af7" stroke-width="1.5" opacity="0.3"/>
-    <g clip-path="url(#c6-clip)" opacity="0.8">
-        <rect x="36" y="82" width="4" height="36" rx="2" fill="#414868"/>
-        <rect x="46" y="68" width="4" height="64" rx="2" fill="#7aa2f7" opacity="0.5"/>
-        <rect x="56" y="58" width="4" height="84" rx="2" fill="#7aa2f7" opacity="0.65"/>
-        <rect x="66" y="72" width="4" height="56" rx="2" fill="#7aa2f7" opacity="0.55"/>
-        <rect x="76" y="48" width="4" height="104" rx="2" fill="#7aa2f7" opacity="0.8"/>
-        <rect x="86" y="62" width="4" height="76" rx="2" fill="#bb9af7" opacity="0.7"/>
-        <rect x="96" y="38" width="4" height="124" rx="2" fill="#bb9af7" opacity="0.9"/>
-        <rect x="106" y="55" width="4" height="90" rx="2" fill="#bb9af7" opacity="0.7"/>
-        <rect x="116" y="44" width="4" height="112" rx="2" fill="#7aa2f7" opacity="0.8"/>
-        <rect x="126" y="65" width="4" height="70" rx="2" fill="#7aa2f7" opacity="0.55"/>
-        <rect x="136" y="54" width="4" height="92" rx="2" fill="#7aa2f7" opacity="0.65"/>
-        <rect x="146" y="72" width="4" height="56" rx="2" fill="#7aa2f7" opacity="0.5"/>
-        <rect x="156" y="80" width="4" height="40" rx="2" fill="#414868"/>
+    <g clip-path="url(#c-clip)" opacity="0.9">
+        <rect x="44" y="75" width="10" height="50" rx="5" fill="#414868"/>
+        <rect x="64" y="55" width="10" height="90" rx="5" fill="#7aa2f7"/>
+        <rect x="84" y="40" width="10" height="120" rx="5" fill="#bb9af7"/>
+        <rect x="104" y="50" width="10" height="100" rx="5" fill="#7dcfff"/>
+        <rect x="124" y="60" width="10" height="80" rx="5" fill="#7aa2f7"/>
+        <rect x="144" y="75" width="10" height="50" rx="5" fill="#414868"/>
     </g>
 </svg>

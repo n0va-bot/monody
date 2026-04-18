@@ -271,7 +271,6 @@ int main (string[] args) {
 
         var hb = new Gtk.HeaderBar ();
         hb.title = "System Update";
-        hb.subtitle = "Monody OS";
         hb.show_close_button = true;
         window.set_titlebar (hb);
 

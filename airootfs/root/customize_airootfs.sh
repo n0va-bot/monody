@@ -24,6 +24,7 @@ cat <<EOF > /home/live/.config/autostart/xfce4-screensaver.desktop
 [Desktop Entry]
 Hidden=true
 EOF
+
 chown -R live:live /home/live/.config
 
 # Services
@@ -48,6 +49,8 @@ cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfdashboard.xml \
    /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfdashboard.xml
 cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/monody.xml \
    /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/monody.xml
+cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-terminal.xml \
+   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-terminal.xml
 
 # STRIPPING
 
@@ -165,7 +168,7 @@ find /usr/lib/firmware/amdgpu -name 'fiji_*' -o -name 'tonga_*' \
   -o -name 'polaris10_*' -o -name 'polaris11_*' -o -name 'polaris12_*' \
   -o -name 'vegam_*' -o -name 'vega10_*' -o -name 'vega12_*' -o -name 'vega20_*' \
   -o -name 'navi10_*' -o -name 'navi12_*' -o -name 'navi14_*' \
-  -o -name 'sienna_cichlid_*' -o -name 'navy_flounder_*' -o -name 'dimgrey_cavefish_*' \
+  -o -name 'navy_flounder_*' -o -name 'dimgrey_cavefish_*' \
   -o -name 'beige_goby_*' | xargs rm -f 2>/dev/null
 
 rm -f /usr/lib/firmware/amdgpu/gc_* /usr/lib/firmware/amdgpu/smu_*
@@ -309,8 +312,6 @@ rm -f /usr/share/applications/xfce4-web-browser.desktop
 rm -f /usr/share/applications/xfce4-mail-reader.desktop
 rm -f /usr/share/applications/xfce4-file-manager.desktop
 rm -f /usr/share/applications/xfce4-terminal-emulator.desktop
-
-echo "StartupWMClass=firefox-esr" >> /usr/share/applications/firefox-esr.desktop
 
 echo "NoDisplay=true" >> /usr/share/applications/plank.desktop
 echo "NoDisplay=true" >> /usr/share/applications/org.xfce.xfdashboard.desktop

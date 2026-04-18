@@ -102,7 +102,7 @@ success "Directories and configuration ready."
 
 if [[ "$BUILD_MODE" == "repo" || "$BUILD_MODE" == "all" ]]; then
 header "Building Local Packages"
-for pkg in monody-file-search-provider monody-hotcorners monody-tools monody; do
+for pkg in monody-file-search-provider monody-hotcorners monody-tools monody monody-installer; do
     log "Building $pkg ..."
     (
         cd "$PROJ_DIR/src/$pkg" || exit 1

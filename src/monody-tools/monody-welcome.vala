@@ -98,7 +98,6 @@ public class WelcomeWindow : Gtk.Window {
 
         var hb = new Gtk.HeaderBar ();
         hb.title = "Welcome to Monody";
-        hb.subtitle = "First Boot Setup";
         hb.show_close_button = true;
         this.set_titlebar (hb);
 
@@ -461,7 +460,7 @@ public class WelcomeWindow : Gtk.Window {
         term.reset (true, true);
 
         string pkgs_str = string.joinv (" ", pkgs);
-        string cmd = "pkexec bash -c 'pacman -Sy && pacman -S --noconfirm --needed " + pkgs_str + "'";
+        string cmd = "pkexec bash -c 'pacman -Syu && pacman -S --noconfirm --needed " + pkgs_str + "'";
         if (opt_flatpak.active) {
             cmd += " && flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo";
         }

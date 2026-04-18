@@ -18,7 +18,5 @@ file_permissions=(
   ["/root"]="0:0:750"
   ["/etc/sudoers.d/live"]="0:0:440"
   ["/etc/runit/sv/agetty-autologin-tty1/run"]="0:0:755"
-  ["/usr/local/bin/monody-install"]="0:0:755"
-  ["/usr/local/bin/monody-update"]="0:0:755"
   ["/etc/sudoers.d/pwfeedback"]="0:0:440"
 )
