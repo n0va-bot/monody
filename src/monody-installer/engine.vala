@@ -58,8 +58,8 @@ public class InstallEngine : Object {
                     string dev = pm.device_path;
                     if (pm.format) {
                         if (pm.encrypt) {
-                            run (@"printf '%s' '$(config.luks_password)' | cryptsetup luksFormat -q $(dev) -d -");
-                            run (@"printf '%s' '$(config.luks_password)' | cryptsetup luksOpen $(dev) monody-root -d -");
+                            run (@"printf '%s' $(GLib.Shell.quote (config.luks_password)) | cryptsetup luksFormat -q $(dev) -d -");
+                            run (@"printf '%s' $(GLib.Shell.quote (config.luks_password)) | cryptsetup luksOpen $(dev) monody-root -d -");
                             root_encrypted = true;
                             root_raw_uuid = Utils.run_sync (@"blkid -s UUID -o value $(dev)").strip ();
                             dev = "/dev/mapper/monody-root";
@@ -70,7 +70,7 @@ public class InstallEngine : Object {
                             if (run (@"mkfs.ext4 -O ^64bit,^metadata_csum_seed,^metadata_csum,^orphan_file -F -L Monody $(dev)") != 0) throw new InstallError.FORMAT ("Failed to format ext4 root");
                         }
                     } else if (pm.encrypt) {
-                        run (@"printf '%s' '$(config.luks_password)' | cryptsetup luksOpen $(dev) monody-root -d -");
+                        run (@"printf '%s' $(GLib.Shell.quote (config.luks_password)) | cryptsetup luksOpen $(dev) monody-root -d -");
                         root_encrypted = true;
                         root_raw_uuid = Utils.run_sync (@"blkid -s UUID -o value $(dev)").strip ();
                         dev = "/dev/mapper/monody-root";
@@ -217,12 +217,12 @@ public class InstallEngine : Object {
             run (@"rm -rf $(target)/etc/mkinitcpio.conf.d");
 
             string script = @"
-ln -sf /usr/share/zoneinfo/$(config.timezone) /etc/localtime
+ln -sf /usr/share/zoneinfo/$(GLib.Shell.quote (config.timezone)) /etc/localtime
 echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
 locale-gen
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 
-echo 'KEYMAP=$(config.keymap)' > /etc/vconsole.conf
+echo 'KEYMAP=$(GLib.Shell.quote (config.keymap))' > /etc/vconsole.conf
 mkdir -p /etc/X11/xorg.conf.d
 cat > /etc/X11/xorg.conf.d/00-keyboard.conf <<KEYBOARD
 Section \"InputClass\"
@@ -232,7 +232,7 @@ Section \"InputClass\"
 EndSection
 KEYBOARD
 
-echo '$(config.hostname)' > /etc/hostname
+echo $(GLib.Shell.quote (config.hostname)) > /etc/hostname
 cat > /etc/hosts <<HOSTS
 127.0.0.1   localhost
 ::1         localhost
@@ -240,11 +240,11 @@ cat > /etc/hosts <<HOSTS
 HOSTS
 
 userdel -rf live 2>/dev/null || true
-useradd -m -G wheel,audio,video,storage,optical,network -s /bin/bash -c '$(config.display_name)' '$(config.username)'
-echo '$(config.username):$(config.user_pass)' | chpasswd
+useradd -m -G wheel,audio,video,storage,optical,network -s /bin/bash -c $(GLib.Shell.quote (config.display_name)) $(GLib.Shell.quote (config.username))
+printf '%s\\n' $(GLib.Shell.quote (config.username + ":" + config.user_pass)) | chpasswd
 ";
             if (config.root_pass != "") {
-                script += @"echo 'root:$(config.root_pass)' | chpasswd\n";
+                script += @"printf '%s\\n' $(GLib.Shell.quote ("root:" + config.root_pass)) | chpasswd\n";
             } else {
                 script += "passwd -l root\n";
             }
@@ -377,7 +377,7 @@ term_margin: 20
         run (@"partprobe $(config.disk)");
         GLib.Thread.usleep (1000000);
 
-        string part_suffix = config.disk.contains ("nvme") ? "p" : "";
+        string part_suffix = (config.disk.contains ("nvme") || config.disk.contains ("mmcblk")) ? "p" : "";
         config.boot_part = config.disk + part_suffix + "1";
         config.root_part = config.disk + part_suffix + "2";
         
