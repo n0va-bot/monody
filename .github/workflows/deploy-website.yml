@@ -37,9 +37,19 @@ jobs:
 
       - name: Update website checksum and link
         run: |
-          sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">${{ env.ISO_SHA256 }}</code>|" website/index.html
-          sed -i "s|<a id=\"iso-download-link\" href=\"[^\"]*\"|<a id=\"iso-download-link\" href=\"https://github.com/n0va-bot/monody/releases/download/nightly/monody-x86_64.iso\"|" website/index.html
-          sed -i "s|<span id=\"iso-size\" class=\"val hi\">.*</span>|<span id=\"iso-size\" class=\"val hi\">${{ env.ISO_SIZE }}</span>|" website/index.html
+          sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">${{ env.ISO_SHA256 }}</code>|" website/index.md
+          sed -i "s|<a id=\"iso-download-link\" href=\"[^\"]*\"|<a id=\"iso-download-link\" href=\"https://github.com/n0va-bot/monody/releases/download/nightly/monody-x86_64.iso\"|" website/index.md
+          sed -i "s|<span id=\"iso-size\" class=\"val hi\">.*</span>|<span id=\"iso-size\" class=\"val hi\">${{ env.ISO_SIZE }}</span>|" website/index.md
+
+      - name: Install kewt
+        run: |
+          curl -sSL https://github.com/n0va-bot/kewt/releases/download/latest/kewt -o kewt
+          chmod +x kewt
+          sudo mv kewt /usr/local/bin/kewt
+
+      - name: Build Website
+        run: |
+          kewt website/ out/
 
       - name: Setup SSH
         run: |
@@ -52,5 +62,5 @@ jobs:
 
       - name: Deploy Website
         run: |
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r website/* \
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r out/* \
             ${{ secrets.REMOTE_HOST }}:/var/www/monody/
