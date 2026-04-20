@@ -43,7 +43,7 @@ jobs:
 
       - name: Install kewt
         run: |
-          curl -sSL https://github.com/n0va-bot/kewt/releases/download/latest/kewt -o kewt
+          curl -sSL https://github.com/n0va-bot/kewt/releases/latest/download/kewt -o kewt
           chmod +x kewt
           sudo mv kewt /usr/local/bin/kewt
 
