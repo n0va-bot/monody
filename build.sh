@@ -24,8 +24,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 BUILD_MODE=${1:-all}
-if [[ "$BUILD_MODE" != "all" && "$BUILD_MODE" != "repo" && "$BUILD_MODE" != "iso" ]]; then
-    echo -e "${RED}[ERROR]${NC} Invalid argument. Use 'repo', 'iso', or 'all'."
+if [[ "$BUILD_MODE" != "all" && "$BUILD_MODE" != "repo" && "$BUILD_MODE" != "iso" && "$BUILD_MODE" != "custom" && "$BUILD_MODE" != "aur" ]]; then
+    echo -e "${RED}[ERROR]${NC} Invalid argument. Use 'custom', 'aur', 'repo', 'iso', or 'all'."
     exit 1
 fi
 
@@ -100,9 +100,9 @@ success "Directories and configuration ready."
 
 # ── Local Package Build ──────────────────────────────────────────────────────
 
-if [[ "$BUILD_MODE" == "repo" || "$BUILD_MODE" == "all" ]]; then
+if [[ "$BUILD_MODE" == "custom" || "$BUILD_MODE" == "all" ]]; then
 header "Building Local Packages"
-for pkg in monody-file-search-provider monody-hotcorners monody-tools monody monody-installer; do
+for pkg in monody-file-search-provider monody-hotcorners monody-tools monody-backgrounds monody-icons monody-plank-theme monody-firefox-config monody-distro-config monody-desktop-config monody monody-installer; do
     log "Building $pkg ..."
     (
         cd "$PROJ_DIR/src/$pkg" || exit 1
@@ -110,21 +110,29 @@ for pkg in monody-file-search-provider monody-hotcorners monody-tools monody mon
         pkgver=$(grep "^pkgver=" PKGBUILD | cut -d= -f2 | tr -d '"' | tr -d "'")
         pkgrel=$(grep "^pkgrel=" PKGBUILD | cut -d= -f2 | tr -d '"' | tr -d "'")
 
-        rm -f *.pkg.tar.zst
-        if [[ "$pkg" == "monody" ]]; then
-            makepkg -cCd --noconfirm || error "Failed to build $pkg"
+        EXISTING=$(ls "$REPO_DIR/${pkg}-${pkgver}-${pkgrel}-"*.pkg.tar.zst 2>/dev/null | head -1)
+
+        if [[ -f "$EXISTING" ]]; then
+            log "  $pkg is up to date ($pkgver-$pkgrel), skipping build."
         else
-            makepkg -scC --noconfirm || error "Failed to build $pkg"
+            rm -f *.pkg.tar.zst
+            if [[ "$pkg" == "monody" ]]; then
+                makepkg -cCd --noconfirm || error "Failed to build $pkg"
+            else
+                makepkg -scC --noconfirm || error "Failed to build $pkg"
+            fi
+            log "  Copying $pkg to local repo ..."
+            cp *.pkg.tar.zst "$REPO_DIR/"
         fi
-        log "  Copying $pkg to local repo ..."
-        cp *.pkg.tar.zst "$REPO_DIR/"
     ) || error "Error processing $pkg"
 done
 
 rm -f "$REPO_DIR"/*-debug*.pkg.tar.zst
+fi
 
 # ── AUR Package Updates ──────────────────────────────────────────────────────
 
+if [[ "$BUILD_MODE" == "aur" || "$BUILD_MODE" == "all" ]]; then
 header "Checking/Cloning AUR Repositories"
 AUR_REPOS=(
     "https://aur.archlinux.org/cogl.git"
@@ -192,8 +200,10 @@ for repo in "${AUR_REPOS[@]}"; do
 done
 
 rm -f "$REPO_DIR"/*-debug*.pkg.tar.zst
+fi
 
 # ── Local Repository Update ───────────────────────────────────────────────────
+if [[ "$BUILD_MODE" == "repo" || "$BUILD_MODE" == "all" ]]; then
 (
     cd "$REPO_DIR" || exit 1
     log "Adding packages to the database..."

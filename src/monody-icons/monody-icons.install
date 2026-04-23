@@ -1,0 +1,7 @@
+post_install() {
+    [ -f /usr/share/icons/default/index.theme.monody ] && cp -f /usr/share/icons/default/index.theme.monody /usr/share/icons/default/index.theme
+}
+
+post_upgrade() {
+    post_install
+}

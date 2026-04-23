@@ -1,0 +1,7 @@
+post_install() {
+    [ -f /etc/lightdm/lightdm-gtk-greeter.conf.monody ] && cp -f /etc/lightdm/lightdm-gtk-greeter.conf.monody /etc/lightdm/lightdm-gtk-greeter.conf
+}
+
+post_upgrade() {
+    post_install
+}

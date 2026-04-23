@@ -8,3 +8,5 @@ work/
 out/
 src/*/*.pkg.tar.zst
 pacman.conf
+pkg/
+src/*/src/

@@ -49,6 +49,8 @@ jobs:
       - name: Run Repo Build
         run: |
           chmod +x build.sh
+          sudo -u build ./build.sh custom
+          sudo -u build ./build.sh aur
           sudo -u build ./build.sh repo
 
       - name: Setup SSH

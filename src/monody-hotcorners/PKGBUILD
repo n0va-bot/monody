@@ -1,6 +1,6 @@
 pkgname=monody-hotcorners
-pkgver=1.1.1
-pkgrel=2
+pkgver=1.1.2
+pkgrel=1
 pkgdesc="Hotcorner triggers for Monody Desktop"
 arch=('x86_64')
 url="https://github.com/n0va-bot/monody"
@@ -12,10 +12,8 @@ source=("monody-hotcorner-service.vala"
         "monody-hotcorner-settings.vala"
         "monody-hotcorner-settings.desktop"
         "monody-hotcorners.desktop"
-        "xfconf.vapi"
         "meson.build")
 sha256sums=('SKIP'
-            'SKIP'
             'SKIP'
             'SKIP'
             'SKIP'

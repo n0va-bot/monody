@@ -9,7 +9,6 @@ dependencies = [
 
 executable('monody-file-search-provider',
     'monody-file-search-provider.vala',
-    'xfconf.vapi',
     dependencies: dependencies,
     install: true,
     install_dir: get_option('bindir')
@@ -17,7 +16,6 @@ executable('monody-file-search-provider',
 
 executable('monody-file-search-settings',
     'monody-file-search-settings.vala',
-    'xfconf.vapi',
     dependencies: dependencies,
     install: true,
     install_dir: get_option('bindir')

@@ -12,7 +12,6 @@ dependencies = [
 
 executable('monody-hotcorner-service',
     'monody-hotcorner-service.vala',
-    'xfconf.vapi',
     dependencies: dependencies,
     install: true,
     install_dir: get_option('bindir')
@@ -20,7 +19,6 @@ executable('monody-hotcorner-service',
 
 executable('monody-hotcorner-settings',
     'monody-hotcorner-settings.vala',
-    'xfconf.vapi',
     dependencies: dependencies,
     install: true,
     install_dir: get_option('bindir')

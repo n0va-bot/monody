@@ -1,0 +1,17 @@
+pkgname=monody-backgrounds
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Monody backgrounds"
+arch=('any')
+license=('GPL')
+depends=()
+
+package() {
+  for item in "$startdir"/*; do
+    item_name=$(basename "$item")
+    if [[ "$item_name" != "PKGBUILD" && "$item_name" != "src" && "$item_name" != "pkg" && ! "$item_name" =~ \.pkg\.tar\..* ]]; then
+      mkdir -p "$pkgdir/$(dirname "$item_name")"
+      cp -a "$item" "$pkgdir/"
+    fi
+  done
+}

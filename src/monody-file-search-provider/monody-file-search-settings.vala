@@ -31,7 +31,7 @@ public class FileSearchSettings : Object {
             stderr.printf ("xfconf init failed: %s\n", e.message);
         }
 
-        channel = Xfconf.Channel.get_channel ("monody");
+        channel = new Xfconf.Channel ("monody");
 
         var prov = new Gtk.CssProvider ();
         try {

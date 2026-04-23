@@ -1,0 +1,22 @@
+pkgname=monody-icons
+pkgver=1.0.0
+pkgrel=2
+pkgdesc="Monody icon configurations"
+arch=('any')
+license=('GPL')
+depends=()
+install="monody-icons.install"
+
+package() {
+  for item in "$startdir"/*; do
+    item_name=$(basename "$item")
+    if [[ "$item_name" != "PKGBUILD" && "$item_name" != "src" && "$item_name" != "pkg" && ! "$item_name" =~ \.pkg\.tar\..* && ! "$item_name" =~ \.install$ ]]; then
+      mkdir -p "$pkgdir/$(dirname "$item_name")"
+      cp -a "$item" "$pkgdir/"
+    fi
+  done
+
+  if [ -f "$pkgdir/usr/share/icons/default/index.theme" ]; then
+      mv "$pkgdir/usr/share/icons/default/index.theme" "$pkgdir/usr/share/icons/default/index.theme.monody"
+  fi
+}

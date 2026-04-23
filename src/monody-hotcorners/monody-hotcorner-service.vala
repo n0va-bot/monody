@@ -90,7 +90,7 @@ public class HotcornerService : Object {
             stderr.printf ("Failed to init xfconf: %s\n", e.message);
         }
 
-        channel = Xfconf.Channel.get_channel ("monody");
+        channel = new Xfconf.Channel ("monody");
         load_settings ();
 
         channel.property_changed.connect ((prop, val) => {

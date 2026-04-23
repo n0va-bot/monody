@@ -5,7 +5,7 @@ pkgdesc="Monody Linux Metapackage"
 arch=('any')
 url="https://monody.krzak.org"
 license=('ISC')
-depends=('monody-tools' 'monody-file-search-provider' 'monody-hotcorners')
+depends=('monody-tools' 'monody-file-search-provider' 'monody-hotcorners' 'monody-backgrounds' 'monody-icons' 'monody-plank-theme' 'monody-firefox-config' 'monody-distro-config' 'monody-desktop-config')
 
 build() {
   true

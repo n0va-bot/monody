@@ -1,0 +1,28 @@
+pkgname=monody-distro-config
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Monody shell configurations"
+arch=('any')
+license=('GPL')
+depends=()
+install="monody-distro-config.install"
+
+package() {
+  for item in "$startdir"/*; do
+    item_name=$(basename "$item")
+    if [[ "$item_name" != "PKGBUILD" && "$item_name" != "src" && "$item_name" != "pkg" && ! "$item_name" =~ \.pkg\.tar\..* && ! "$item_name" =~ \.install$ ]]; then
+      mkdir -p "$pkgdir/$(dirname "$item_name")"
+      cp -a "$item" "$pkgdir/"
+    fi
+  done
+
+  if [ -f "$pkgdir/etc/issue" ]; then
+      mv "$pkgdir/etc/issue" "$pkgdir/etc/issue.monody"
+  fi
+  if [ -f "$pkgdir/etc/os-release" ]; then
+      mv "$pkgdir/etc/os-release" "$pkgdir/etc/os-release.monody"
+  fi
+  if [ -f "$pkgdir/etc/lsb-release" ]; then
+      mv "$pkgdir/etc/lsb-release" "$pkgdir/etc/lsb-release.monody"
+  fi
+}

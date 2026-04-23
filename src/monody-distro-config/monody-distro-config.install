@@ -1,0 +1,9 @@
+post_install() {
+    [ -f /etc/issue.monody ] && cp -f /etc/issue.monody /etc/issue
+    [ -f /etc/os-release.monody ] && cp -f /etc/os-release.monody /etc/os-release
+    [ -f /etc/lsb-release.monody ] && cp -f /etc/lsb-release.monody /etc/lsb-release
+}
+
+post_upgrade() {
+    post_install
+}

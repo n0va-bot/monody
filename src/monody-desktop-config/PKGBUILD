@@ -1,0 +1,22 @@
+pkgname=monody-desktop-config
+pkgver=1.0.0
+pkgrel=3
+pkgdesc="Monody system-wide desktop configurations"
+arch=('any')
+license=('GPL')
+depends=()
+install="monody-desktop-config.install"
+
+package() {
+  for item in "$startdir"/*; do
+    item_name=$(basename "$item")
+    if [[ "$item_name" != "PKGBUILD" && "$item_name" != "src" && "$item_name" != "pkg" && ! "$item_name" =~ \.pkg\.tar\..* && ! "$item_name" =~ \.install$ ]]; then
+      mkdir -p "$pkgdir/$(dirname "$item_name")"
+      cp -a "$item" "$pkgdir/"
+    fi
+  done
+
+  if [ -f "$pkgdir/etc/lightdm/lightdm-gtk-greeter.conf" ]; then
+      mv "$pkgdir/etc/lightdm/lightdm-gtk-greeter.conf" "$pkgdir/etc/lightdm/lightdm-gtk-greeter.conf.monody"
+  fi
+}

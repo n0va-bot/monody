@@ -20,7 +20,7 @@ public class FileSearchProvider : Object {
 
         try {
             Xfconf.init ();
-            channel = Xfconf.Channel.get_channel ("monody");
+            channel = new Xfconf.Channel ("monody");
             load_settings ();
 
             channel.property_changed.connect ((prop, val) => {

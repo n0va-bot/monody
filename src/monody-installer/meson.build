@@ -6,7 +6,8 @@ dependencies = [
     dependency('gtk+-3.0'),
     dependency('gio-2.0'),
     dependency('vte-2.91'),
-    dependency('timezonemap'),
+    meson.get_compiler('vala').find_library('posix'),
+    meson.get_compiler('c').find_library('timezonemap', required: true),
 ]
 
 sources = [
@@ -29,6 +30,7 @@ executable('monody-installer',
     sources,
     'timezonemap.vapi',
     dependencies: dependencies,
+    c_args: ['-I/usr/include/timezonemap'],
     install: true,
     install_dir: get_option('bindir')
 )
