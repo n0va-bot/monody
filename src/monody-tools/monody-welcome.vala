@@ -84,7 +84,8 @@ public class WelcomeWindow : Gtk.Window {
     """;
 
     public WelcomeWindow () {
-        this.set_default_size (760, 560);
+        this.title = "Welcome to Monody";
+        this.set_default_size (760, 480);
         this.window_position = Gtk.WindowPosition.CENTER;
         this.destroy.connect (on_close);
 
@@ -96,28 +97,7 @@ public class WelcomeWindow : Gtk.Window {
                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         } catch (Error e) {}
 
-        var hb = new Gtk.HeaderBar ();
-        hb.title = "Welcome to Monody";
-        hb.show_close_button = true;
-        this.set_titlebar (hb);
-
-        action_btn = new Gtk.Button.with_label ("Get Started");
-        action_btn.get_style_context ().add_class ("suggested-action");
-        action_btn.clicked.connect (on_action_clicked);
-        hb.pack_start (action_btn);
-
-        skip_btn = new Gtk.Button.with_label ("Skip Setup");
-        skip_btn.no_show_all = true;
-        skip_btn.clicked.connect (on_skip_clicked);
-        hb.pack_start (skip_btn);
-
-        spinner = new Gtk.Spinner ();
-        spinner.no_show_all = true;
-        hb.pack_end (spinner);
-
-        status_label = new Gtk.Label ("");
-        status_label.no_show_all = true;
-        hb.pack_end (status_label);
+        var main_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
 
         stack = new Gtk.Stack ();
         stack.transition_type     = Gtk.StackTransitionType.CROSSFADE;
@@ -129,7 +109,33 @@ public class WelcomeWindow : Gtk.Window {
         stack.add_named (build_install_page (), "install");
         stack.add_named (build_done_page (),    "done");
 
-        this.add (stack);
+        main_box.pack_start (stack, true, true, 0);
+
+        var action_bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        action_bar.margin = 12;
+        action_bar.halign = Gtk.Align.CENTER;
+
+        action_btn = new Gtk.Button.with_label ("Get Started");
+        action_btn.get_style_context ().add_class ("suggested-action");
+        action_btn.clicked.connect (on_action_clicked);
+        action_bar.pack_start (action_btn, false, false, 0);
+
+        skip_btn = new Gtk.Button.with_label ("Skip Setup");
+        skip_btn.no_show_all = true;
+        skip_btn.clicked.connect (on_skip_clicked);
+        action_bar.pack_start (skip_btn, false, false, 0);
+
+        spinner = new Gtk.Spinner ();
+        spinner.no_show_all = true;
+        action_bar.pack_end (spinner, false, false, 0);
+
+        status_label = new Gtk.Label ("");
+        status_label.no_show_all = true;
+        action_bar.pack_end (status_label, false, false, 0);
+
+        main_box.pack_start (action_bar, false, false, 0);
+
+        this.add (main_box);
     }
 
 

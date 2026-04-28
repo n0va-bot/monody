@@ -131,18 +131,9 @@ public class UserManager : Gtk.Box {
                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         } catch (Error e) {}
 
-        var hb = new Gtk.HeaderBar ();
-        hb.title = "Users & Groups";
-        hb.show_close_button = true;
-
-        var add_btn = new Gtk.Button.with_label ("Add User");
-        add_btn.image = new Gtk.Image.from_icon_name ("list-add-symbolic", Gtk.IconSize.BUTTON);
-        add_btn.always_show_image = true;
-        add_btn.get_style_context ().add_class ("suggested-action");
-        add_btn.clicked.connect (show_add_dialog);
-        hb.pack_start (add_btn);
-
         var paned = new Gtk.Paned (Gtk.Orientation.HORIZONTAL);
+
+        var sidebar_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
 
         var sw = new Gtk.ScrolledWindow (null, null);
         sw.hscrollbar_policy = Gtk.PolicyType.NEVER;
@@ -153,7 +144,17 @@ public class UserManager : Gtk.Box {
         list.selection_mode = Gtk.SelectionMode.SINGLE;
         list.row_selected.connect (on_row_selected);
         sw.add (list);
-        paned.pack1 (sw, false, false);
+        sidebar_box.pack_start (sw, true, true, 0);
+
+        var add_btn = new Gtk.Button.with_label ("Add User");
+        add_btn.image = new Gtk.Image.from_icon_name ("list-add-symbolic", Gtk.IconSize.BUTTON);
+        add_btn.always_show_image = true;
+        add_btn.get_style_context ().add_class ("suggested-action");
+        add_btn.clicked.connect (show_add_dialog);
+        add_btn.margin = 8;
+        sidebar_box.pack_start (add_btn, false, false, 0);
+
+        paned.pack1 (sidebar_box, false, false);
 
         stack = new Gtk.Stack ();
         stack.transition_type = Gtk.StackTransitionType.CROSSFADE;
@@ -357,6 +358,7 @@ public class UserManager : Gtk.Box {
             warn ("Cannot read passwords: " + e.message);
         }
         list.show_all ();
+        reselect (current_username);
     }
 
     private string[] get_user_groups (string u) {
@@ -768,11 +770,6 @@ int main (string[] args) {
         window.set_default_size (600, 500);
         window.window_position = Gtk.WindowPosition.CENTER;
         window.destroy.connect (Gtk.main_quit);
-
-        var hb = new Gtk.HeaderBar ();
-        hb.title = "Users";
-        hb.show_close_button = true;
-        window.set_titlebar (hb);
 
         window.add (w);
         window.show_all ();

@@ -292,11 +292,6 @@ int main (string[] args) {
         window.window_position = Gtk.WindowPosition.CENTER;
         window.destroy.connect (Gtk.main_quit);
 
-        var hb = new Gtk.HeaderBar ();
-        hb.title = "File Search";
-        hb.show_close_button = true;
-        window.set_titlebar (hb);
-
         var sw = new Gtk.ScrolledWindow (null, null);
         sw.hscrollbar_policy = Gtk.PolicyType.NEVER;
         sw.add (widget);

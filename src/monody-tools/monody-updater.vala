@@ -269,11 +269,6 @@ int main (string[] args) {
         window.window_position = Gtk.WindowPosition.CENTER;
         window.destroy.connect (Gtk.main_quit);
 
-        var hb = new Gtk.HeaderBar ();
-        hb.title = "System Update";
-        hb.show_close_button = true;
-        window.set_titlebar (hb);
-
         window.add (win);
         window.show_all ();
     }

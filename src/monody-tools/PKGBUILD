@@ -1,6 +1,6 @@
 pkgname=monody-tools
-pkgver=1.1.2
-pkgrel=2
+pkgver=1.1.3
+pkgrel=1
 pkgdesc="Custom tools for Monody Linux"
 arch=('x86_64')
 url="https://github.com/n0va-bot/monody"
