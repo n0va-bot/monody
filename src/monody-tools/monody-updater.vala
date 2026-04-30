@@ -21,8 +21,22 @@ public class UpdaterWindow : Gtk.Box {
         this.auto_finish = auto_finish;
 
         term = new Vte.Terminal ();
-        term.set_scroll_on_output (true);
         term.set_scrollback_lines (10000);
+        term.set_scroll_on_output (false);
+        term.set_scroll_on_keystroke (true);
+
+        var adj = term.get_vadjustment ();
+        bool was_at_bottom = true;
+
+        adj.value_changed.connect (() => {
+            was_at_bottom = (adj.value + adj.page_size >= adj.upper - 10.0);
+        });
+
+        adj.changed.connect (() => {
+            if (was_at_bottom) {
+                adj.set_value (adj.upper - adj.page_size);
+            }
+        });
         term.get_style_context ().add_class ("updater-terminal");
 
         var bg = Gdk.RGBA ();  bg.parse ("#0e0e1a");
@@ -85,7 +99,7 @@ public class UpdaterWindow : Gtk.Box {
 
         finish_btn.clicked.connect (() => {
             var toplevel = this.get_toplevel () as Gtk.Window;
-            if (toplevel != null) toplevel.destroy ();
+            if (toplevel != null)toplevel.destroy ();
             else Gtk.main_quit ();
         });
 
@@ -125,7 +139,7 @@ public class UpdaterWindow : Gtk.Box {
 
             if (auto_finish) {
                 var toplevel = this.get_toplevel () as Gtk.Window;
-                if (toplevel != null) toplevel.destroy ();
+                if (toplevel != null)toplevel.destroy ();
                 else Gtk.main_quit ();
             } else {
                 stack.visible_child_name = "finish";
@@ -136,7 +150,7 @@ public class UpdaterWindow : Gtk.Box {
     }
 
     private void trigger_update () {
-        if (running) return;
+        if (running)return;
         running = true;
 
         stack.visible_child_name = "term";
@@ -144,20 +158,19 @@ public class UpdaterWindow : Gtk.Box {
 
         string[] argv = { "/bin/bash", "-c", "topgrade -y" };
         term.spawn_async (
-            Vte.PtyFlags.DEFAULT,
-            null,
-            argv,
-            null,
-            GLib.SpawnFlags.SEARCH_PATH,
-            null,
-            -1,
-            null,
-            (t, pid, err) => {
-                if (err != null) {
-                    running = false;
-                }
+                          Vte.PtyFlags.DEFAULT,
+                          null,
+                          argv,
+                          null,
+                          GLib.SpawnFlags.SEARCH_PATH,
+                          null,
+                          -1,
+                          null,
+                          (t, pid, err) => {
+            if (err != null) {
+                running = false;
             }
-        );
+        });
     }
 }
 
@@ -249,9 +262,10 @@ int main (string[] args) {
     try {
         css.load_from_data (css_text);
         Gtk.StyleContext.add_provider_for_screen (
-            Gdk.Screen.get_default (), css,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-    } catch (Error e) {}
+                                                  Gdk.Screen.get_default (), css,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+    } catch (Error e) {
+    }
 
     var win = new UpdaterWindow (auto_start, auto_finish);
     win.vexpand = true;

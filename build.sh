@@ -102,7 +102,7 @@ success "Directories and configuration ready."
 
 if [[ "$BUILD_MODE" == "custom" || "$BUILD_MODE" == "all" ]]; then
 header "Building Local Packages"
-for pkg in monody-file-search-provider monody-hotcorners monody-tools monody-backgrounds monody-icons monody-plank-theme monody-firefox-config monody-distro-config monody-desktop-config monody monody-installer; do
+for pkg in monody-file-search-provider monody-hotcorners monody-tools monody-users monody-backgrounds monody-icons monody-plank-theme monody-firefox-config monody-distro-config monody-desktop-config monody monody-installer; do
     log "Building $pkg ..."
     (
         cd "$PROJ_DIR/src/$pkg" || exit 1

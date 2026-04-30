@@ -19,10 +19,3 @@ executable('monody-updater',
     install: true,
     install_dir: get_option('bindir')
 )
-
-executable('monody-users',
-    'monody-users.vala',
-    dependencies: [gtk_dep, x11_dep],
-    install: true,
-    install_dir: get_option('bindir')
-)

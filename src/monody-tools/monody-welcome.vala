@@ -321,8 +321,22 @@ public class WelcomeWindow : Gtk.Window {
 
     private Gtk.Widget build_install_page () {
         term = new Vte.Terminal ();
-        term.set_scroll_on_output (true);
         term.set_scrollback_lines (10000);
+        term.set_scroll_on_output (false);
+        term.set_scroll_on_keystroke (true);
+
+        var adj = term.get_vadjustment ();
+        bool was_at_bottom = true;
+
+        adj.value_changed.connect (() => {
+            was_at_bottom = (adj.value + adj.page_size >= adj.upper - 10.0);
+        });
+
+        adj.changed.connect (() => {
+            if (was_at_bottom) {
+                adj.set_value (adj.upper - adj.page_size);
+            }
+        });
 
         var bg = Gdk.RGBA (); bg.parse ("#1a1b26");
         var fg = Gdk.RGBA (); fg.parse ("#a9b1d6");

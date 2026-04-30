@@ -1,0 +1,27 @@
+pkgname=monody-users
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="User management app for Monody Linux"
+arch=('x86_64')
+url="https://github.com/n0va-bot/monody"
+license=('ISC')
+depends=('gtk3' 'polkit' 'accountsservice')
+makedepends=('vala' 'meson' 'ninja')
+
+source=("monody-users.vala"
+        "monody-users.desktop"
+        "meson.build")
+sha256sums=('SKIP'
+            'SKIP'
+            'SKIP')
+
+build() {
+  arch-meson . build
+  meson compile -C build
+}
+
+package() {
+  DESTDIR="$pkgdir" meson install -C build
+
+  install -Dm644 monody-users.desktop "$pkgdir/usr/share/applications/monody-users.desktop"
+}

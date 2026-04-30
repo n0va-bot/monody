@@ -1,23 +1,19 @@
 pkgname=monody-tools
-pkgver=1.1.3
+pkgver=1.1.7
 pkgrel=1
 pkgdesc="Custom tools for Monody Linux"
 arch=('x86_64')
 url="https://github.com/n0va-bot/monody"
 license=('ISC')
-depends=('gtk3' 'vte3' 'polkit' 'accountsservice')
+depends=('gtk3' 'vte3' 'polkit')
 makedepends=('vala' 'meson' 'ninja')
 
 source=("monody-welcome.vala"
         "monody-updater.vala"
-        "monody-users.vala"
         "monody-welcome.desktop"
-        "monody-users.desktop"
         "monody-updater.desktop"
         "meson.build")
 sha256sums=('SKIP'
-            'SKIP'
-            'SKIP'
             'SKIP'
             'SKIP'
             'SKIP'
@@ -32,6 +28,5 @@ package() {
   DESTDIR="$pkgdir" meson install -C build
 
   install -Dm644 monody-welcome.desktop "$pkgdir/usr/share/applications/monody-welcome.desktop"
-  install -Dm644 monody-users.desktop "$pkgdir/usr/share/applications/monody-users.desktop"
   install -Dm644 monody-updater.desktop "$pkgdir/usr/share/applications/monody-updater.desktop"
 }
