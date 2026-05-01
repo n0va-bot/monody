@@ -37,10 +37,8 @@ jobs:
 
       - name: Update website checksum and link
         run: |
-          export ISO_SHA256="${{ env.ISO_SHA256 }}"
-          export ISO_DOWNLOAD_LINK="https://github.com/MonodyDev/monody/releases/download/nightly/monody-x86_64.iso"
-          envsubst < website/index.html > website/index.html.tmp
-          mv website/index.html.tmp website/index.html
+          sed -i "s|{{ISO_DOWNLOAD_LINK}}|https://github.com/MonodyDev/monody/releases/download/nightly/monody-x86_64.iso|g" website/index.html
+          sed -i "s|{{ISO_SHA256}}|${{ env.ISO_SHA256 }}|g" website/index.html
 
       - name: Setup SSH
         run: |
