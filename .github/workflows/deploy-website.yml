@@ -3,7 +3,7 @@ name: Deploy Website
 on:
   push:
     paths:
-      - 'website/**'
+      - "website/**"
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -37,18 +37,10 @@ jobs:
 
       - name: Update website checksum and link
         run: |
-          sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">${{ env.ISO_SHA256 }}</code>|" website/index.html
-          sed -i "s|<a id=\"iso-download-link\" href=\"[^\"]*\"|<a id=\"iso-download-link\" href=\"https://github.com/MonodyDev/monody/releases/download/nightly/monody-x86_64.iso\"|" website/index.html
-
-      - name: Install kewt
-        run: |
-          curl -sSL https://github.com/n0va-bot/kewt/releases/latest/download/kewt -o kewt
-          chmod +x kewt
-          sudo mv kewt /usr/local/bin/kewt
-
-      - name: Build Website
-        run: |
-          kewt website/ out/
+          export ISO_SHA256="${{ env.ISO_SHA256 }}"
+          export ISO_DOWNLOAD_LINK="https://github.com/MonodyDev/monody/releases/download/nightly/monody-x86_64.iso"
+          envsubst < website/index.html > website/index.html.tmp
+          mv website/index.html.tmp website/index.html
 
       - name: Setup SSH
         run: |
@@ -61,5 +53,5 @@ jobs:
 
       - name: Deploy Website
         run: |
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r out/* \
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r website/* \
             ${{ secrets.REMOTE_HOST }}:/var/www/monody/
