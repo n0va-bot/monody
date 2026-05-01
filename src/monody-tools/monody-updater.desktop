@@ -5,6 +5,5 @@ Exec=/usr/bin/monody-updater
 Icon=system-software-update
 Terminal=false
 Type=Application
-Categories=Settings;System;X-XFCE-SettingsDialog;X-XFCE-SystemSettings;
-X-XfcePluggable=true
+Categories=Settings;System;
 Keywords=update;upgrade;topgrade;

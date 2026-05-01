@@ -1,0 +1,27 @@
+pkgname=monody-welcome
+pkgver=1.0.3
+pkgrel=1
+pkgdesc="Welcome app for Monody Linux"
+arch=('x86_64')
+url="https://github.com/MonodyDev/monody"
+license=('ISC')
+depends=('gtk3' 'vte3' 'polkit')
+makedepends=('vala' 'meson' 'ninja')
+
+source=("monody-welcome.vala"
+        "monody-welcome.desktop"
+        "meson.build")
+sha256sums=('SKIP'
+            'SKIP'
+            'SKIP')
+
+build() {
+  arch-meson . build
+  meson compile -C build
+}
+
+package() {
+  DESTDIR="$pkgdir" meson install -C build
+
+  install -Dm644 monody-welcome.desktop "$pkgdir/usr/share/applications/monody-welcome.desktop"
+}

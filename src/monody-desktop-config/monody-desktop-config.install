@@ -1,5 +1,7 @@
 post_install() {
     [ -f /etc/lightdm/lightdm-gtk-greeter.conf.monody ] && cp -f /etc/lightdm/lightdm-gtk-greeter.conf.monody /etc/lightdm/lightdm-gtk-greeter.conf
+    dconf update 2>/dev/null || true
+    glib-compile-schemas /usr/share/glib-2.0/schemas/ 2>/dev/null || true
 }
 
 post_upgrade() {

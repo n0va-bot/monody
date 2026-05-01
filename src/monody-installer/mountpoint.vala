@@ -24,16 +24,14 @@ public class MountpointPage : Box {
         this.spacing = 12;
         this.margin = 30;
 
-        var header = new Label ("Assign Mount Points");
-        header.get_style_context ().add_class ("page-header");
+        var header = new Label ("<span font_weight='bold' font_size='large'>Assign Mount Points</span>");
+        header.use_markup = true;
         header.xalign = 0;
 
         var desc = new Label ("Select partitions and assign their mount points (e.g. /, /boot, /home).\nClick directly on a cell to edit it.");
-        desc.get_style_context ().add_class ("page-desc");
         desc.xalign = 0;
 
         var launch_btn = new Button.with_label ("Launch GParted");
-        launch_btn.get_style_context ().add_class ("suggested-action");
         launch_btn.halign = Align.START;
         launch_btn.clicked.connect (launch_gparted);
 
@@ -54,9 +52,9 @@ public class MountpointPage : Box {
         }
 
         part_store = new Gtk.ListStore (7,
-            typeof (string), typeof (string), typeof (string),
-            typeof (string), typeof (string),
-            typeof (bool), typeof (bool));
+                                        typeof (string), typeof (string), typeof (string),
+                                        typeof (string), typeof (string),
+                                        typeof (bool), typeof (bool));
 
         part_view = new TreeView.with_model (part_store);
         part_view.set_size_request (-1, 200);
@@ -142,7 +140,7 @@ public class MountpointPage : Box {
             part_store.get (iter, COL_MOUNT, out mount_pt);
             if (mount_pt == "/boot") {
                 var dlg = new MessageDialog ((Window) this.get_toplevel (), DialogFlags.MODAL,
-                    MessageType.WARNING, ButtonsType.OK, "Cannot encrypt the boot partition.");
+                                             MessageType.WARNING, ButtonsType.OK, "Cannot encrypt the boot partition.");
                 dlg.run ();
                 dlg.destroy ();
                 return;
@@ -183,8 +181,8 @@ public class MountpointPage : Box {
                 string mount_pt, use_as;
                 part_store.get (iter, COL_MOUNT, out mount_pt, COL_USE_AS, out use_as);
                 if (use_as != "do not use" && use_as != "") {
-                    if (mount_pt == "/") has_root = true;
-                    if (mount_pt == "/boot") has_boot = true;
+                    if (mount_pt == "/")has_root = true;
+                    if (mount_pt == "/boot")has_boot = true;
                 }
             } while (part_store.iter_next (ref iter));
         }
@@ -203,12 +201,12 @@ public class MountpointPage : Box {
             return;
         }
 
-        var dlg = new MessageDialog ((Window) this.get_toplevel(), DialogFlags.MODAL, MessageType.INFO, ButtonsType.NONE, "Waiting for GParted to close...");
+        var dlg = new MessageDialog ((Window) this.get_toplevel (), DialogFlags.MODAL, MessageType.INFO, ButtonsType.NONE, "Waiting for GParted to close...");
         dlg.show ();
 
         Pid pid;
         try {
-            GLib.Process.spawn_async (null, {"gparted", config.disk}, null, GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD, null, out pid);
+            GLib.Process.spawn_async (null, { "gparted", config.disk }, null, GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD, null, out pid);
             GLib.ChildWatch.add (pid, (p, status) => {
                 GLib.Process.close_pid (p);
                 dlg.destroy ();
@@ -243,7 +241,7 @@ public class MountpointPage : Box {
                 string dev, mount_pt, use_as;
                 bool fmt, enc;
                 part_store.get (siter, COL_DEV, out dev, COL_MOUNT, out mount_pt,
-                    COL_USE_AS, out use_as, COL_FORMAT, out fmt, COL_ENCRYPT, out enc);
+                                COL_USE_AS, out use_as, COL_FORMAT, out fmt, COL_ENCRYPT, out enc);
                 if (use_as != "do not use" && use_as != "") {
                     saved_mount.insert (dev, mount_pt);
                     saved_use.insert (dev, use_as);
@@ -256,23 +254,23 @@ public class MountpointPage : Box {
         part_store.clear ();
         config.mounts = new GLib.List<PartitionMount> ();
 
-        if (config.disk == "") return;
+        if (config.disk == "")return;
 
         try {
             string out_text, err_text;
             int status;
-            string[] argv = {"lsblk", "-p", "-P", "-o", "NAME,SIZE,FSTYPE,PARTTYPENAME", config.disk};
+            string[] argv = { "lsblk", "-p", "-P", "-o", "NAME,SIZE,FSTYPE,PARTTYPENAME", config.disk };
             GLib.Process.spawn_sync (null, argv, null, GLib.SpawnFlags.SEARCH_PATH, null, out out_text, out err_text, out status);
 
             if (status == 0) {
                 foreach (string line in out_text.split ("\n")) {
-                    if (line.strip () == "") continue;
+                    if (line.strip () == "")continue;
                     string dev = get_regex_val (line, "NAME");
-                    if (dev == config.disk) continue;
+                    if (dev == config.disk)continue;
 
                     string size = get_regex_val (line, "SIZE");
                     string fstype = get_regex_val (line, "FSTYPE");
-                    if (fstype == "") fstype = get_regex_val (line, "PARTTYPENAME");
+                    if (fstype == "")fstype = get_regex_val (line, "PARTTYPENAME");
 
                     string mount_pt = "";
                     string use_as = "do not use";
@@ -289,13 +287,13 @@ public class MountpointPage : Box {
                     TreeIter iter;
                     part_store.append (out iter);
                     part_store.set (iter,
-                        COL_DEV, dev,
-                        COL_SIZE, size,
-                        COL_FSTYPE, fstype,
-                        COL_MOUNT, mount_pt,
-                        COL_USE_AS, use_as,
-                        COL_FORMAT, fmt,
-                        COL_ENCRYPT, enc
+                                    COL_DEV, dev,
+                                    COL_SIZE, size,
+                                    COL_FSTYPE, fstype,
+                                    COL_MOUNT, mount_pt,
+                                    COL_USE_AS, use_as,
+                                    COL_FORMAT, fmt,
+                                    COL_ENCRYPT, enc
                     );
                 }
             }
@@ -315,7 +313,7 @@ public class MountpointPage : Box {
                 string dev, mount_pt, use_as;
                 bool format, enc;
                 part_store.get (iter, COL_DEV, out dev, COL_MOUNT, out mount_pt,
-                    COL_USE_AS, out use_as, COL_FORMAT, out format, COL_ENCRYPT, out enc);
+                                COL_USE_AS, out use_as, COL_FORMAT, out format, COL_ENCRYPT, out enc);
 
                 if (use_as != "do not use" && use_as != "") {
                     config.mounts.append (new PartitionMount (dev, mount_pt, use_as, format, enc));

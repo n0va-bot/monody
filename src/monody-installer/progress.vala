@@ -23,11 +23,10 @@ public class ProgressPage : Box {
 
         var left_panel = new Box (Orientation.VERTICAL, 0);
         left_panel.set_size_request (280, -1);
-        left_panel.get_style_context ().add_class ("info-badge");
 
         var brand_label = new Label ("");
         brand_label.use_markup = true;
-        brand_label.label = "<span color='#7aa2f7' weight='ultrabold' size='x-large'>Monody</span>";
+        brand_label.label = "<span weight='bold' size='x-large'>Monody</span>";
         brand_label.halign = Align.START;
         brand_label.margin = 20;
         brand_label.margin_bottom = 6;
@@ -67,7 +66,7 @@ public class ProgressPage : Box {
 
         var header = new Label ("");
         header.use_markup = true;
-        header.label = "<span color='#bb9af7' weight='bold' size='large'>Installation Progress</span>";
+        header.label = "<span weight='bold' size='large'>Installation Progress</span>";
         header.halign = Align.CENTER;
 
         progress_bar = new ProgressBar ();
@@ -77,7 +76,6 @@ public class ProgressPage : Box {
         progress_bar.margin_top = 8;
 
         status_label = new Label ("");
-        status_label.get_style_context ().add_class ("page-desc");
         status_label.halign = Align.CENTER;
         status_label.ellipsize = Pango.EllipsizeMode.END;
         status_label.max_width_chars = 55;
@@ -108,12 +106,31 @@ public class ProgressPage : Box {
         this.pack_start (right_panel, true, true, 0);
     }
 
+    private bool set_icon_from_names (Image image, string[] names, IconSize size) {
+        var theme = IconTheme.get_default ();
+        foreach (unowned string name in names) {
+            if (theme != null && theme.has_icon (name)) {
+                image.set_from_icon_name (name, size);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void complete_current_task () {
         if (current_task_row != null && current_spinner != null && current_task_icon != null) {
             current_spinner.stop ();
             current_spinner.hide ();
-            current_task_icon.set_from_icon_name ("object-select-symbolic", IconSize.MENU);
-            current_task_icon.show ();
+            if (set_icon_from_names (current_task_icon, {
+                "emblem-ok-symbolic",
+                "process-completed-symbolic",
+                "object-select-symbolic",
+                "emblem-ok",
+                "gtk-apply"
+            }, IconSize.MENU)) {
+                current_task_icon.show ();
+            }
             if (current_task_label != null) {
                 string text = current_task_label.label;
                 if (text.has_prefix ("<b>")) {
@@ -166,18 +183,18 @@ public class ProgressPage : Box {
 
     public void start_installation () {
         var engine = new InstallEngine (config);
-        
+
         engine.progress_callback = (pct, msg) => {
             GLib.Idle.add (() => {
                 progress_bar.fraction = pct / 100.0;
                 progress_bar.text = pct.to_string () + "%";
-                
+
                 if (!msg.contains ("%")) {
                     if (current_task_label == null || !current_task_label.label.contains (GLib.Markup.escape_text (msg))) {
                         add_task (msg);
                     }
                 }
-                
+
                 status_label.label = msg;
                 return GLib.Source.REMOVE;
             });
@@ -188,7 +205,7 @@ public class ProgressPage : Box {
                 TextIter iter;
                 log_buffer.get_end_iter (out iter);
                 log_buffer.insert (ref iter, line + "\n", -1);
-                
+
                 var adj = log_scroll.get_vadjustment ();
                 adj.set_value (adj.get_upper () - adj.get_page_size ());
                 return GLib.Source.REMOVE;
@@ -209,8 +226,14 @@ public class ProgressPage : Box {
                         current_spinner.hide ();
                     }
                     if (current_task_icon != null) {
-                        current_task_icon.set_from_icon_name ("dialog-error-symbolic", IconSize.MENU);
-                        current_task_icon.show ();
+                        if (set_icon_from_names (current_task_icon, {
+                            "dialog-error-symbolic",
+                            "dialog-error",
+                            "process-stop-symbolic",
+                            "gtk-dialog-error"
+                        }, IconSize.MENU)) {
+                            current_task_icon.show ();
+                        }
                     }
                     status_label.use_markup = true;
                     status_label.label = "<span color='#f7768e' weight='bold'>Installation Failed:</span> " + GLib.Markup.escape_text (msg);

@@ -9,7 +9,7 @@ REPO_DIR="$PROJ_DIR/prebuilt_repo"
 AUR_DIR="$PROJ_DIR/aur_builds"
 WEBSITE_FILE="$PROJ_DIR/website/index.html"
 ISO_FINAL="$OUT_DIR/monody-x86_64.iso"
-GITHUB_REPO="n0va-bot/monody"
+GITHUB_REPO="MonodyDev/monody"
 
 # Colors
 RED='\033[0;31m'
@@ -64,6 +64,26 @@ Architecture = auto
 ParallelDownloads = 5
 SigLevel = Never
 LocalFileSigLevel = Optional
+NoExtract = usr/share/help/* !usr/share/help/en*
+NoExtract = usr/share/gtk-doc/html/*
+NoExtract = usr/share/doc/*
+NoExtract = usr/share/locale/* !usr/share/locale/en* !usr/share/locale/locale.alias
+NoExtract = usr/share/i18n/locales/* !usr/share/i18n/locales/en_*
+NoExtract = usr/share/i18n/charmaps/* !usr/share/i18n/charmaps/UTF-8.gz !usr/share/i18n/charmaps/ANSI*
+NoExtract = usr/share/man/*
+NoExtract = usr/share/info/*
+NoExtract = usr/include/*
+NoExtract = usr/share/gir-1.0/*
+NoExtract = usr/lib/python*/test/*
+NoExtract = usr/lib/python*/idlelib/*
+NoExtract = usr/lib/firmware/* !usr/lib/firmware/amdgpu/* !usr/lib/firmware/iwlwifi-* !usr/lib/firmware/intel/iwlwifi/* !usr/lib/firmware/rtw89/* !usr/lib/firmware/rtw88/* !usr/lib/firmware/brcm/* !usr/lib/firmware/ath10k/* !usr/lib/firmware/ath9k* !usr/lib/firmware/intel/sof* !usr/lib/firmware/alsa/* !usr/lib/firmware/i915/* !usr/lib/firmware/radeon/* !usr/lib/firmware/nvidia/*
+NoExtract = usr/share/icons/Adwaita/* !usr/share/icons/Adwaita/cursors/* !usr/share/icons/Adwaita/index.theme !usr/share/icons/Adwaita/scalable/*
+NoExtract = usr/share/icons/Mint-L/*/22* usr/share/icons/Mint-L/*/24* usr/share/icons/Mint-L/*/32* usr/share/icons/Mint-L/*/64* usr/share/icons/Mint-L/*/96* usr/share/icons/Mint-L/*/128* usr/share/icons/Mint-L/*/256* usr/share/icons/Mint-L/*/512*
+NoExtract = usr/share/icons/Mint-L/mimetypes/*
+NoExtract = usr/share/icons/Mint-L-* !usr/share/icons/Mint-L-Purple/*
+NoExtract = usr/share/themes/Mint-L-* !usr/share/themes/Mint-L-Dark/* !usr/share/themes/Mint-L-Darker/* !usr/share/themes/Mint-L-Purple/* !usr/share/themes/Mint-L-Dark-Purple/* !usr/share/themes/Mint-L-Darker-Purple/*
+NoExtract = usr/share/backgrounds/* !usr/share/backgrounds/monody* !usr/share/backgrounds/limine*
+NoExtract = usr/share/wallpapers/*
 
 [monody]
 SigLevel = Optional TrustAll
@@ -90,6 +110,7 @@ header "Checking Dependencies"
 for cmd in mkarchiso repo-add sha256sum git makepkg; do
     command -v "$cmd" >/dev/null 2>&1 || error "$cmd is not installed."
 done
+
 success "All dependencies found."
 
 header "Preparing Directories"
@@ -102,7 +123,7 @@ success "Directories and configuration ready."
 
 if [[ "$BUILD_MODE" == "custom" || "$BUILD_MODE" == "all" ]]; then
 header "Building Local Packages"
-for pkg in monody-file-search-provider monody-hotcorners monody-tools monody-users monody-backgrounds monody-icons monody-plank-theme monody-firefox-config monody-distro-config monody-desktop-config monody monody-installer; do
+for pkg in monody-tools monody-backgrounds monody-icons monody-welcome monody-distro-config monody-desktop-config monody monody-installer monody-users; do
     log "Building $pkg ..."
     (
         cd "$PROJ_DIR/src/$pkg" || exit 1
@@ -135,12 +156,11 @@ fi
 if [[ "$BUILD_MODE" == "aur" || "$BUILD_MODE" == "all" ]]; then
 header "Checking/Cloning AUR Repositories"
 AUR_REPOS=(
-    "https://aur.archlinux.org/cogl.git"
-    "https://aur.archlinux.org/clutter.git"
-    "https://aur.archlinux.org/xfdashboard.git"
     "https://aur.archlinux.org/paru.git"
     "https://aur.archlinux.org/topgrade-bin.git"
-    "https://aur.archlinux.org/vala-panel-appmenu.git"
+    "https://aur.archlinux.org/mint-l-theme.git"
+    "https://aur.archlinux.org/mint-l-icons.git"
+    "https://aur.archlinux.org/badwolf.git"
 )
 
 for repo in "${AUR_REPOS[@]}"; do
@@ -148,18 +168,6 @@ for repo in "${AUR_REPOS[@]}"; do
     if [ ! -d "$AUR_DIR/$repo_name" ]; then
         log "Cloning $repo_name ..."
         git clone "$repo" "$AUR_DIR/$repo_name" || error "Failed to clone $repo_name"
-    fi
-
-    if [[ "$repo_name" == "vala-panel-appmenu" ]]; then
-        log "  Applying Monody patches to $repo_name/PKGBUILD ..."
-        sed -i 's/: ${_build_mate:=true}/: ${_build_mate:=false}/' "$AUR_DIR/$repo_name/PKGBUILD"
-        sed -i 's/: ${_build_vala:=true}/: ${_build_vala:=false}/' "$AUR_DIR/$repo_name/PKGBUILD"
-        sed -i 's/: ${_build_budgie:=true}/: ${_build_budgie:=false}/' "$AUR_DIR/$repo_name/PKGBUILD"
-
-        if ! grep -q "jayatana=enabled" "$AUR_DIR/$repo_name/PKGBUILD"; then
-            sed -i '/-Dauto_features=disabled/a \  -Djayatana=enabled' "$AUR_DIR/$repo_name/PKGBUILD"
-            sed -i "s/makedepends=(/makedepends=('java-environment' /" "$AUR_DIR/$repo_name/PKGBUILD"
-        fi
     fi
 done
 
@@ -185,6 +193,23 @@ for repo in "${AUR_REPOS[@]}"; do
                 log "  $pkg_name is up to date ($pkgver-$pkgrel), skipping build."
             else
                 log "  Update detected or package missing for $pkg_name. Building..."
+
+                # Auto-install missing makedepends on the host
+                _makedeps=($(bash -c 'source PKGBUILD 2>/dev/null; echo "${makedepends[@]}"'))
+                if [ ${#_makedeps[@]} -gt 0 ]; then
+                    _missing=()
+                    for dep in "${_makedeps[@]}"; do
+                        dep_name=$(echo "$dep" | sed 's/[<>=].*//') 
+                        pacman -Qi "$dep_name" &>/dev/null || _missing+=("$dep_name")
+                    done
+                    if [ ${#_missing[@]} -gt 0 ]; then
+                        log "  Installing makedepends: ${_missing[*]}"
+                        $SUDO pacman -S --needed --noconfirm "${_missing[@]}" || \
+                            paru -S --needed --noconfirm "${_missing[@]}" || \
+                            error "Failed to install makedepends for $pkg_name"
+                    fi
+                fi
+
                 rm -f *.pkg.tar.zst
                 if [[ "$pkg_name" == "cogl" || "$pkg_name" == "clutter" ]]; then
                     makepkg -sciC --noconfirm || error "Failed to build $pkg_name"

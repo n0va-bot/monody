@@ -44,13 +44,13 @@ public class InstallEngine : Object {
             if (!partition_disk ()) throw new InstallError.PARTITION ("Failed to partition disk");
 
             prog (10, "Formatting & Mounting partitions ...");
-            
+
             string root_dev = "";
             string root_uuid = "";
             string root_fs = "";
             bool root_encrypted = false;
             string root_raw_uuid = "";
-            
+
             run (@"umount -lR $(target) 2>/dev/null || true");
 
             foreach (PartitionMount pm in config.mounts) {
@@ -75,7 +75,7 @@ public class InstallEngine : Object {
                         root_raw_uuid = Utils.run_sync (@"blkid -s UUID -o value $(dev)").strip ();
                         dev = "/dev/mapper/monody-root";
                     }
-                    
+
                     root_dev = dev;
                     root_uuid = Utils.run_sync (@"blkid -s UUID -o value $(dev)").strip ();
                     root_fs = pm.filesystem;
@@ -94,7 +94,7 @@ public class InstallEngine : Object {
                 run (@"btrfs subvolume create /mnt/btrfs-temp/@cache");
                 run (@"btrfs subvolume create /mnt/btrfs-temp/@log");
                 run (@"umount /mnt/btrfs-temp");
-                
+
                 run (@"mount -o subvol=@ $(root_dev) $(target)");
                 run (@"mkdir -p $(target)/home $(target)/var/cache $(target)/var/log");
                 run (@"mount -o subvol=@home $(root_dev) $(target)/home");
@@ -106,7 +106,7 @@ public class InstallEngine : Object {
 
             foreach (PartitionMount pm in config.mounts) {
                 if (pm.mount_point == "/") continue;
-                
+
                 string dev = pm.device_path;
                 if (pm.format) {
                     if (pm.filesystem == "vfat") {
@@ -119,14 +119,14 @@ public class InstallEngine : Object {
                         run (@"mkswap $(dev)");
                     }
                 }
-                
+
                 if (pm.mount_point != "" && pm.mount_point != "[SWAP]") {
                     run (@"mkdir -p $(target)$(pm.mount_point)");
                     run (@"mount $(dev) $(target)$(pm.mount_point)");
                 } else if (pm.mount_point == "[SWAP]") {
                     run (@"swapon $(dev)");
                 }
-                
+
                 if (pm.mount_point == "/boot") {
                     config.boot_part = pm.device_path;
                 }
@@ -165,7 +165,7 @@ public class InstallEngine : Object {
 
             foreach (PartitionMount pm in config.mounts) {
                 if (pm.mount_point == "/" || pm.mount_point == "") continue;
-                
+
                 string uuid = Utils.run_sync (@"blkid -s UUID -o value $(pm.device_path)").strip ();
                 if (pm.mount_point == "[SWAP]") {
                     fstab += @"UUID=$(uuid)  none  swap  defaults  0 0\n";
@@ -174,13 +174,13 @@ public class InstallEngine : Object {
                     fstab += @"UUID=$(uuid)  $(pm.mount_point)  $(pm.filesystem)  defaults  0 $(pass)\n";
                 }
             }
-            
+
             GLib.FileUtils.set_contents (target + "/etc/fstab", fstab);
 
             if (config.swap_size > 0) {
                 bool has_swap = false;
                 foreach (PartitionMount pm in config.mounts) { if (pm.mount_point == "[SWAP]") has_swap = true; }
-                
+
                 if (!has_swap) {
                     prog (55, "Creating swapfile ...");
                     if (root_fs == "btrfs") {
@@ -210,10 +210,10 @@ public class InstallEngine : Object {
             }
             string mkinit_conf = @"MODULES=()\nBINARIES=()\nFILES=()\nHOOKS=($(hooks))\nCOMPRESSION=\"zstd\"\n";
             GLib.FileUtils.set_contents (target + "/etc/mkinitcpio.conf", mkinit_conf);
-            
+
             string preset = "ALL_config=\"/etc/mkinitcpio.conf\"\nALL_kver=\"/boot/vmlinuz-linux\"\nPRESETS=('default')\ndefault_image=\"/boot/initramfs-linux.img\"\n";
             GLib.FileUtils.set_contents (target + "/etc/mkinitcpio.d/linux.preset", preset);
-            
+
             run (@"rm -rf $(target)/etc/mkinitcpio.conf.d");
 
             string script = @"
@@ -249,6 +249,13 @@ printf '%s\\n' $(GLib.Shell.quote (config.username + ":" + config.user_pass)) | 
                 script += "passwd -l root\n";
             }
             script += @"
+if grep -qx 'uninitialized' /etc/machine-id 2>/dev/null; then
+    rm -f /etc/machine-id
+fi
+dbus-uuidgen --ensure=/etc/machine-id
+mkdir -p /var/lib/dbus
+ln -sf /etc/machine-id /var/lib/dbus/machine-id
+
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/wheel
 chmod 440 /etc/sudoers.d/wheel
 
@@ -260,7 +267,15 @@ cp /usr/share/applications/monody-welcome.desktop /home/$(config.username)/.conf
 chmod +x /home/$(config.username)/.config/autostart/monody-welcome.desktop 2>/dev/null || true
 chown -R $(config.username):$(config.username) /home/$(config.username)/.config
 
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/greeter.conf <<'LIGHTDM'
+[Seat:*]
+greeter-session=lightdm-slick-greeter
+LIGHTDM
+
+ln -sf /etc/runit/sv/dbus /etc/runit/runsvdir/default/ 2>/dev/null || true
 ln -sf /etc/runit/sv/lightdm /etc/runit/runsvdir/default/ 2>/dev/null || true
+rm -f /etc/runit/runsvdir/default/agetty-autologin-tty1
 rm -f /etc/lightdm/lightdm.conf.d/autologin.conf
 
 for tty in tty1 tty2; do
@@ -320,9 +335,9 @@ term_margin: 20
                 run (@"mkdir -p $(target)/boot/EFI/BOOT");
                 run (@"cp /usr/share/limine/BOOTX64.EFI $(target)/boot/EFI/BOOT/BOOTX64.EFI");
                 run (@"cp $(target)/usr/share/backgrounds/limine-bg.png $(target)/boot/limine-bg.png 2>/dev/null || true");
-                
+
                 GLib.FileUtils.set_contents (target + "/boot/limine.conf", limine_conf);
-                
+
                 string num = config.boot_part.substring (config.boot_part.length - 1);
                 run (@"efibootmgr | grep -i 'Monody' | grep -o 'Boot[0-9A-F]*' | sed 's/Boot//' | xargs -r -I{} efibootmgr -b {} -B");
                 run (@"efibootmgr -c -d $(config.disk) -p $(num) -l '\\EFI\\BOOT\\BOOTX64.EFI' -L 'Monody Linux'");
@@ -373,18 +388,18 @@ term_margin: 20
             }
             run (@"bash -c 'fdisk $(config.disk) < /tmp/fdisk.in'");
         }
-        
+
         run (@"partprobe $(config.disk)");
         GLib.Thread.usleep (1000000);
 
         string part_suffix = (config.disk.contains ("nvme") || config.disk.contains ("mmcblk")) ? "p" : "";
         config.boot_part = config.disk + part_suffix + "1";
         config.root_part = config.disk + part_suffix + "2";
-        
+
         config.mounts = new GLib.List<PartitionMount> ();
         config.mounts.append (new PartitionMount (config.boot_part, "/boot", "vfat", true, false));
         config.mounts.append (new PartitionMount (config.root_part, "/", config.root_fs, true, config.encrypt_root));
-        
+
         return true;
     }
 }

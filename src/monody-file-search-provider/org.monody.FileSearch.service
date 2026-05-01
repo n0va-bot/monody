@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.monody.FileSearch
-Exec=/usr/bin/monody-file-search-provider

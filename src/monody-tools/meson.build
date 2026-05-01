@@ -6,13 +6,6 @@ x11_dep = dependency('x11')
 glib_dep = dependency('glib-2.0')
 gio_dep = dependency('gio-2.0')
 
-executable('monody-welcome',
-    'monody-welcome.vala',
-    dependencies: [gtk_dep, vte_dep],
-    install: true,
-    install_dir: get_option('bindir')
-)
-
 executable('monody-updater',
     'monody-updater.vala',
     dependencies: [gtk_dep, vte_dep, x11_dep],

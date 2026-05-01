@@ -1,7 +1,0 @@
-[Desktop Entry]
-Name=Wireplumber
-Comment=Pipewire Session Manager
-Exec=wireplumber
-Terminal=false
-Type=Application
-X-GNOME-Autostart-enabled=true

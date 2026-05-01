@@ -14,43 +14,45 @@ chmod +x /etc/skel/.config/autostart/*
 cp /etc/os-release /usr/lib/os-release
 cp /etc/lsb-release /usr/lib/lsb-release 2>/dev/null || true
 
-groupadd -r autologin || true
-useradd -m -G wheel,audio,video,storage,optical,network,autologin -s /bin/bash live
-passwd -d live
+# Runit does not replace the placeholder machine-id automatically.
+if [ "$(cat /etc/machine-id 2>/dev/null)" = "uninitialized" ]; then
+  rm -f /etc/machine-id
+fi
+dbus-uuidgen --ensure=/etc/machine-id
+mkdir -p /var/lib/dbus
+ln -sf /etc/machine-id /var/lib/dbus/machine-id
 
-# Disable xfce4-screensaver in the live environment
-mkdir -p /home/live/.config/autostart
-cat <<EOF > /home/live/.config/autostart/xfce4-screensaver.desktop
-[Desktop Entry]
-Hidden=true
-EOF
+groupadd -r autologin || true
+id -u live >/dev/null 2>&1 || useradd -m -G wheel,audio,video,storage,optical,network,autologin -s /bin/bash live || true
+
+# Keep a static fallback so tty autologin does not depend on useradd succeeding in the image build chroot.
+if ! id -u live >/dev/null 2>&1; then
+  grep -q '^live:' /etc/group || echo 'live:x:1000:' >> /etc/group
+  grep -q '^live:' /etc/gshadow && sed -i '/^live:/d' /etc/gshadow
+  [ -f /etc/gshadow ] && echo 'live:!*::' >> /etc/gshadow
+
+  for grp in wheel audio video storage optical network autologin; do
+    if grep -q "^${grp}:" /etc/group; then
+      sed -i "/^${grp}:/ { /,live\(,\|$\)/! s/$/,live/; }" /etc/group
+      if [ -f /etc/gshadow ]; then
+        sed -i "/^${grp}:/ { /:.*:.*:.*live\(,\|$\)/! s/$/,live/; }" /etc/gshadow
+      fi
+    fi
+  done
+
+  echo 'live:x:1000:1000:live:/home/live:/bin/bash' >> /etc/passwd
+  echo 'live::19000:0:99999:7:::' >> /etc/shadow
+fi
+
+mkdir -p /home/live
+passwd -d live || true
 
 chown -R live:live /home/live/.config
 
 # Services
-rm -f /etc/runit/runsvdir/default/agetty-tty1
+rm -f /etc/runit/runsvdir/default/agetty-autologin-tty1
+ln -sf /etc/runit/sv/dbus /etc/runit/runsvdir/default/dbus
 ln -sf /etc/runit/sv/lightdm /etc/runit/runsvdir/default/lightdm
-
-# Copy xsettings globally
-mkdir -p /etc/xdg/xfce4/xfconf/xfce-perchannel-xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-screensaver.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-screensaver.xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfdashboard.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfdashboard.xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/monody.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/monody.xml
-cp /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-terminal.xml \
-   /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-terminal.xml
 
 # STRIPPING
 
@@ -81,6 +83,8 @@ find /usr/lib -name "*.a" -delete 2>/dev/null
 
 # Python bytecode cache
 find /usr -name "__pycache__" -exec rm -rf {} + 2>/dev/null
+find /usr -name "*.pyc" -delete 2>/dev/null
+find /usr -name "*.pyo" -delete 2>/dev/null
 
 # hwdata
 rm -f /usr/share/hwdata/pci.ids.gz
@@ -103,18 +107,29 @@ rm -rf /usr/share/themes/XP-Balloon
 rm -rf /usr/share/themes/ZOMG-PONIES!
 
 # Icons
+for d in /usr/share/themes/Mint-L-*/; do
+  case "$(basename "$d")" in
+    Mint-L-Dark|Mint-L-Darker) ;;
+    Mint-L-Purple|Mint-L-Dark-Purple|Mint-L-Darker-Purple) ;;
+    *) rm -rf "$d" ;;
+  esac
+done
+
+rm -rf /usr/share/icons/Papirus
+rm -rf /usr/share/icons/Papirus-Dark
+rm -rf /usr/share/icons/Papirus-Light
 rm -rf /usr/share/icons/AdwaitaLegacy
 rm -rf /usr/share/icons/HighContrast
-rm -rf /usr/share/icons/Premium-left
+
+for d in /usr/share/icons/Mint-L-*/; do
+  case "$(basename "$d")" in
+    Mint-L-Purple) ;;
+    *) rm -rf "$d" ;;
+  esac
+done
 
 # Fonts
 rm -rf /usr/share/fonts/Adwaita
-
-# Backgrounds
-rm -rf /usr/share/backgrounds/xfce
-mkdir -p /usr/share/backgrounds/xfce
-cp /usr/share/backgrounds/monody.svg /usr/share/backgrounds/xfce/xfce-verticals.png
-ln -sf /usr/share/backgrounds/monody.svg /usr/share/backgrounds/xfce/xfce-x.svg
 
 # Firmware
 
@@ -252,6 +267,12 @@ rm -rf /usr/lib/firmware/kaweth*
 rm -rf /usr/lib/firmware/sb16
 rm -rf /usr/lib/firmware/usbdux*
 rm -rf /usr/lib/firmware/cis
+rm -rf /usr/lib/firmware/liquidio
+rm -rf /usr/lib/firmware/netronome
+rm -rf /usr/lib/firmware/mellanox
+rm -rf /usr/lib/firmware/qlogic
+rm -rf /usr/lib/firmware/ql2*
+rm -rf /usr/lib/firmware/cxgb4
 
 # Bluetooth
 rm -rf /usr/lib/firmware/rtl_bt
@@ -281,9 +302,11 @@ rm -rf /usr/lib/firefox/updater
 rm -rf /usr/lib/firefox/browser/chrome/icons/default
 
 # Strip large icons
-find /usr/share/icons/elementary -type d -name '*@2x*' -exec rm -rf {} + 2>/dev/null
-find /usr/share/icons/elementary -type d -name '64*' -o -name '96*' -o -name '128*' -o -name '256*' -o -name '512*' -exec rm -rf {} + 2>/dev/null
-find /usr/share/icons/Adwaita -mindepth 1 -maxdepth 1 ! -name 'cursors' ! -name 'index.theme' -exec rm -rf {} + 2>/dev/null
+# Mint-L icons
+find /usr/share/icons/Mint-L* -type d -name '*@2x*' -exec rm -rf {} + 2>/dev/null
+find /usr/share/icons/Mint-L* -type d -name '64*' -o -name '96*' -o -name '128*' -o -name '256*' -o -name '512*' -exec rm -rf {} + 2>/dev/null
+
+find /usr/share/icons/Adwaita -mindepth 1 -maxdepth 1 ! -name 'cursors' ! -name 'index.theme' ! -name 'scalable' -exec rm -rf {} + 2>/dev/null
 
 rm -rf /usr/lib/firmware/intel/ibt-*
 rm -rf /usr/lib/firmware/mediatek
@@ -308,23 +331,23 @@ rm -rf /var/lib/pacman/sync/*
 rm -rf /usr/share/help
 
 rm -rf /usr/lib/firmware/nvidia
-rm -f /usr/share/applications/xfce4-web-browser.desktop
-rm -f /usr/share/applications/xfce4-mail-reader.desktop
-rm -f /usr/share/applications/xfce4-file-manager.desktop
-rm -f /usr/share/applications/xfce4-terminal-emulator.desktop
-
-echo "NoDisplay=true" >> /usr/share/applications/plank.desktop
-echo "NoDisplay=true" >> /usr/share/applications/org.xfce.xfdashboard.desktop
-echo "NoDisplay=true" >> /usr/share/applications/org.xfce.xfdashboard-settings.desktop
 
 sed -i 's/^Icon=.*/Icon=folder/g' /usr/share/applications/thunar.desktop
 
-find /usr/share/icons/elementary -name 'distributor-logo*' -exec rm -f {} +
-find /usr/share/icons/elementary -name 'start-here*' -exec rm -f {} +
-
-gtk-update-icon-cache -f -t /usr/share/icons/elementary 2>/dev/null || true
+gtk-update-icon-cache -f -t /usr/share/icons/Mint-L 2>/dev/null || true
+gtk-update-icon-cache -f -t /usr/share/icons/Mint-L-Purple 2>/dev/null || true
 dconf update || true
 
 # Rebuild initramfs after firmware stripping
 depmod -a
+
+# Fix Grouped Window List middle click behavior
+sed -i '/"middle-click-action": {/,/}/ s/"default": 3/"default": 2/' /usr/share/cinnamon/applets/grouped-window-list@cinnamon.org/settings-schema.json
+
+# Fix default keyboard layout and locale
+sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+locale-gen
+echo "KEYMAP=us" > /etc/vconsole.conf
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+
 mkinitcpio -P || true

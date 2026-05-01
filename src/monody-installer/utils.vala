@@ -8,10 +8,10 @@ namespace Utils {
             int exit_status;
 
             Process.spawn_command_line_sync (
-                cmd,
-                out standard_output,
-                out standard_error,
-                out exit_status
+                                             cmd,
+                                             out standard_output,
+                                             out standard_error,
+                                             out exit_status
             );
             return standard_output.strip ();
         } catch (Error e) {
@@ -24,10 +24,10 @@ namespace Utils {
         try {
             int exit_status;
             Process.spawn_command_line_sync (
-                cmd,
-                null,
-                null,
-                out exit_status
+                                             cmd,
+                                             null,
+                                             null,
+                                             out exit_status
             );
             if (Process.if_exited (exit_status)) {
                 return Process.exit_status (exit_status);
@@ -42,8 +42,8 @@ namespace Utils {
     public int run_async_with_code (string cmd, LogCallback? logger) {
         try {
             var launcher = new GLib.SubprocessLauncher (GLib.SubprocessFlags.STDOUT_PIPE | GLib.SubprocessFlags.STDERR_MERGE);
-            var process = launcher.spawnv ({"bash", "-c", cmd});
-            
+            var process = launcher.spawnv ({ "bash", "-c", cmd });
+
             var dis = new GLib.DataInputStream (process.get_stdout_pipe ());
 
             string line;
@@ -53,15 +53,15 @@ namespace Utils {
                 if (line == null) {
                     break;
                 }
-                
+
                 dis.read_byte (null);
 
                 if (logger != null) {
                     string clean = line.strip ();
-                    if (clean != "") logger (clean);
+                    if (clean != "")logger (clean);
                 }
             }
-            
+
             process.wait ();
             if (process.get_if_exited ()) {
                 return process.get_exit_status ();
@@ -69,7 +69,7 @@ namespace Utils {
             return -1;
         } catch (Error e) {
             warning ("Failed to run async command '%s': %s", cmd, e.message);
-            if (logger != null) logger ("Error: " + e.message);
+            if (logger != null)logger ("Error: " + e.message);
             return -1;
         }
     }

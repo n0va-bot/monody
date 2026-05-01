@@ -2,7 +2,8 @@ using Gtk;
 
 public class SummaryPage : Box {
     private InstallConfig config;
-    private Box cards_box;
+    private Gtk.ListStore store;
+    private TreeView view;
 
     public SummaryPage (InstallConfig config) {
         this.config = config;
@@ -10,22 +11,31 @@ public class SummaryPage : Box {
         this.spacing = 12;
         this.margin = 30;
 
-        var header = new Label ("");
+        var header = new Label ("<span font_weight='bold' font_size='large'>Ready to install</span>");
         header.use_markup = true;
-        header.label = "<span color='#bb9af7' weight='bold' size='x-large'>Review Installation</span>";
-        header.halign = Align.CENTER;
+        header.xalign = 0;
 
-        var desc = new Label ("Please review your settings before proceeding.");
-        desc.get_style_context ().add_class ("page-desc");
-        desc.halign = Align.CENTER;
-        desc.margin_bottom = 10;
+        var desc = new Label ("Please verify that the following details are correct.");
+        desc.xalign = 0;
+
+        store = new Gtk.ListStore (2, typeof (string), typeof (string));
+        view = new TreeView.with_model (store);
+        view.headers_visible = false;
+
+        var cell_title = new CellRendererText ();
+        cell_title.weight = Pango.Weight.BOLD;
+        var col_title = new TreeViewColumn.with_attributes ("Setting", cell_title, "text", 0);
+        col_title.min_width = 150;
+        view.append_column (col_title);
+
+        var cell_val = new CellRendererText ();
+        var col_val = new TreeViewColumn.with_attributes ("Value", cell_val, "text", 1);
+        view.append_column (col_val);
 
         var scroll = new ScrolledWindow (null, null);
-        scroll.set_policy (PolicyType.NEVER, PolicyType.AUTOMATIC);
-        
-        cards_box = new Box (Orientation.VERTICAL, 0);
-        cards_box.halign = Align.CENTER;
-        scroll.add (cards_box);
+        scroll.set_policy (PolicyType.AUTOMATIC, PolicyType.AUTOMATIC);
+        scroll.add (view);
+        scroll.expand = true;
 
         this.pack_start (header, false, false, 0);
         this.pack_start (desc, false, false, 0);
@@ -33,62 +43,29 @@ public class SummaryPage : Box {
     }
 
     public void refresh () {
-        cards_box.get_children ().foreach ((child) => {
-            cards_box.remove (child);
-        });
+        store.clear ();
 
-        add_card ("drive-harddisk-symbolic", "Disk", config.disk, config.boot_mode.up () + " · " + (config.partition_mode == "auto" ? "Automatic" : "Manual"));
-        add_card ("mark-location-symbolic", "Timezone", config.timezone, "");
-        add_card ("input-keyboard-symbolic", "Keyboard", config.keymap, "");
-        add_card ("avatar-default-symbolic", "User Account", config.display_name, config.username + " · Root: " + (config.root_pass != "" ? "Enabled" : "Disabled"));
-        add_card ("computer-symbolic", "Hostname", config.hostname, "");
-        add_card ("drive-removable-media-symbolic", "Swap", config.swap_size > 0 ? config.swap_size.to_string () + " MB" : "None", "");
+        TreeIter iter;
 
-        cards_box.show_all ();
-    }
+        store.append (out iter);
+        store.set (iter, 0, "Disk:", 1, config.disk + " (" + (config.partition_mode == "auto" ? "Automatic" : "Manual") + ")");
 
-    private void add_card (string icon_name, string title, string primary, string secondary) {
-        var card = new Box (Orientation.HORIZONTAL, 14);
-        card.get_style_context ().add_class ("option-card");
-        card.margin_start = 10;
-        card.margin_end = 10;
-        card.margin_top = 4;
-        card.margin_bottom = 4;
+        store.append (out iter);
+        store.set (iter, 0, "Timezone:", 1, config.timezone);
 
-        var icon = new Image.from_icon_name (icon_name, IconSize.DND);
-        icon.valign = Align.CENTER;
-        icon.margin_start = 10;
+        store.append (out iter);
+        store.set (iter, 0, "Keyboard:", 1, config.keymap);
 
-        var text_box = new Box (Orientation.VERTICAL, 2);
-        text_box.valign = Align.CENTER;
-        text_box.margin_top = 8;
-        text_box.margin_bottom = 8;
+        store.append (out iter);
+        store.set (iter, 0, "Username:", 1, config.username + " (" + config.display_name + ")");
 
-        var title_label = new Label ("");
-        title_label.use_markup = true;
-        title_label.label = "<span size='small' weight='bold' color='#7aa2f7'>" + GLib.Markup.escape_text (title.up ()) + "</span>";
-        title_label.xalign = 0;
+        store.append (out iter);
+        store.set (iter, 0, "Hostname:", 1, config.hostname);
 
-        var value_label = new Label ("");
-        value_label.use_markup = true;
-        value_label.label = "<span weight='bold' size='large'>" + GLib.Markup.escape_text (primary) + "</span>";
-        value_label.xalign = 0;
-        value_label.ellipsize = Pango.EllipsizeMode.END;
+        store.append (out iter);
+        store.set (iter, 0, "Root Account:", 1, config.root_pass != "" ? "Enabled" : "Disabled");
 
-        text_box.pack_start (title_label, false, false, 0);
-        text_box.pack_start (value_label, false, false, 0);
-
-        if (secondary != "") {
-            var sec_label = new Label ("");
-            sec_label.use_markup = true;
-            sec_label.label = "<span size='small' alpha='60%'>" + GLib.Markup.escape_text (secondary) + "</span>";
-            sec_label.xalign = 0;
-            text_box.pack_start (sec_label, false, false, 0);
-        }
-
-        card.pack_start (icon, false, false, 6);
-        card.pack_start (text_box, true, true, 4);
-
-        cards_box.pack_start (card, false, false, 0);
+        store.append (out iter);
+        store.set (iter, 0, "Swap space:", 1, config.swap_size > 0 ? config.swap_size.to_string () + " MB" : "None");
     }
 }

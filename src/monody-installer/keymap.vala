@@ -15,12 +15,11 @@ public class KeymapPage : Box {
         this.spacing = 12;
         this.margin = 30;
 
-        var header = new Label ("Keyboard Layout");
-        header.get_style_context ().add_class ("page-header");
+        var header = new Label ("<span font_weight='bold' font_size='large'>Keyboard layout</span>");
+        header.use_markup = true;
         header.xalign = 0;
 
-        var desc = new Label ("Select the keyboard layout for your system.");
-        desc.get_style_context ().add_class ("page-desc");
+        var desc = new Label ("Choose your keyboard layout:");
         desc.xalign = 0;
 
         layout_store = new Gtk.ListStore (2, typeof (string), typeof (string));
@@ -37,7 +36,7 @@ public class KeymapPage : Box {
             GLib.Value val;
             model.get_value (iter, column, out val);
             string text = val.get_string ();
-            if (text == null) return true;
+            if (text == null)return true;
             return !text.down ().contains (key.down ());
         });
         var layout_renderer = new CellRendererText ();
@@ -52,7 +51,7 @@ public class KeymapPage : Box {
             GLib.Value val;
             model.get_value (iter, column, out val);
             string text = val.get_string ();
-            if (text == null) return true;
+            if (text == null)return true;
             return !text.down ().contains (key.down ());
         });
         var variant_renderer = new CellRendererText ();
@@ -94,8 +93,8 @@ public class KeymapPage : Box {
     private void load_keymaps () {
         try {
             var file = GLib.File.new_for_path ("/usr/share/X11/xkb/rules/base.lst");
-            if (!file.query_exists ()) return;
-            
+            if (!file.query_exists ())return;
+
             var dis = new DataInputStream (file.read ());
             string line;
             string current_section = "";
@@ -107,7 +106,7 @@ public class KeymapPage : Box {
                     continue;
                 }
                 string tline = line.strip ();
-                if (tline == "") continue;
+                if (tline == "")continue;
 
                 if (current_section == "layout") {
                     var parts = tline.split (" ", 2);
@@ -142,15 +141,15 @@ public class KeymapPage : Box {
             GLib.Value val_code, val_desc;
             model.get_value (iter, 0, out val_code);
             model.get_value (iter, 1, out val_desc);
-            
+
             string layout_code = val_code.get_string ();
             string layout_desc = val_desc.get_string ();
-            
+
             config.keymap = layout_code;
 
             filtered_variant_store.clear ();
             TreeIter v_iter;
-            
+
             // Add default variant
             filtered_variant_store.append (out v_iter);
             filtered_variant_store.set (v_iter, 0, "", 1, layout_desc + " (Default)");
@@ -183,7 +182,7 @@ public class KeymapPage : Box {
             GLib.Value val_code;
             model.get_value (iter, 0, out val_code);
             string variant_code = val_code.get_string ();
-            
+
             TreeIter l_iter;
             TreeModel l_model;
             if (layout_view.get_selection ().get_selected (out l_model, out l_iter)) {

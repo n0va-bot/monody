@@ -1,0 +1,82 @@
+[org/gnome/desktop/interface]
+gtk-theme='Mint-L-Dark-Purple'
+icon-theme='Mint-L-Purple'
+cursor-theme='Adwaita'
+color-scheme='prefer-dark'
+
+[org/gnome/desktop/wm/preferences]
+button-layout='close,maximize,minimize:'
+theme='Mint-L-Dark-Purple'
+
+[org/cinnamon]
+alttab-switcher-delay=100
+alttab-switcher-style='timeline'
+enabled-applets=['panel1:left:0:Cinnamenu@json:16', 'panel1:left:1:separator@cinnamon.org:1', 'panel1:left:2:grouped-window-list@cinnamon.org:2', 'panel1:right:0:separator@cinnamon.org:30', 'panel1:right:1:Trash@n0va:31', 'panel1:right:2:ScaleView@n0va:32', 'panel2:right:5:xapp-status@cinnamon.org:4', 'panel2:right:6:notifications@cinnamon.org:5', 'panel2:right:7:systray@cinnamon.org:3', 'panel2:right:10:network@cinnamon.org:10', 'panel2:right:11:sound@cinnamon.org:11', 'panel2:right:12:power@cinnamon.org:12', 'panel2:right:13:calendar@cinnamon.org:13', 'panel2:right:14:user@cinnamon.org:34', 'panel2:right:15:cornerbar@cinnamon.org:14', 'panel2:left:1:AppMenu@n0va:24:orient', 'panel2:left:0:WindowControls@n0va:26']
+enabled-extensions=['Maximiser@n0va']
+hotcorner-fullscreen=false
+hotcorner-layout=['scale:true:0', 'expo:false:0', 'scale:false:0', 'desktop:false:0']
+next-applet-id=33
+panel-edit-mode=false
+panel-zone-icon-sizes='[{"panelId": 1, "left": 0, "center": 0, "right": 0}, {"left": 0, "center": 0, "right": 0, "panelId": 2}]'
+panel-zone-symbolic-icon-sizes='[{"panelId": 1, "left": 28, "center": 28, "right": 16}, {"left": 28, "center": 28, "right": 28, "panelId": 2}]'
+panel-zone-text-sizes='[{"panelId":1,"left":0,"center":0,"right":0},{"left":0,"center":0,"right":0,"panelId":2}]'
+panels-enabled=['1:0:left', '2:0:top']
+panels-height=['1:56', '2:24']
+window-effect-speed=1
+workspace-expo-view-as-grid=true
+
+[org/cinnamon/desktop/a11y/applications]
+screen-keyboard-enabled=true
+
+[org/cinnamon/desktop/background]
+picture-uri='file:///usr/share/backgrounds/monody.svg'
+picture-options='zoom'
+
+[org/cinnamon/theme]
+name='Mint-L-Dark-Purple'
+
+[org/cinnamon/desktop/interface]
+gtk-theme='Mint-L-Dark-Purple'
+icon-theme='Mint-L-Purple'
+cursor-theme='Adwaita'
+
+[org/cinnamon/desktop/wm/preferences]
+button-layout='close,maximize,minimize:'
+theme='Mint-L-Dark-Purple'
+num-workspaces=1
+workspace-names=@as []
+
+[org/cinnamon/desktop/keybindings]
+looking-glass-keybinding=@as []
+
+[org/cinnamon/desktop/keybindings/media-keys]
+area-screenshot=@as []
+screensaver=['<Super>l', 'XF86ScreenSaver']
+screenshot=@as []
+terminal=['<Primary><Alt>t', '<Super>t']
+
+[org/cinnamon/desktop/keybindings/wm]
+close=['<Alt>F4', '<Super>q']
+
+[org/cinnamon/gestures]
+enabled=true
+swipe-down-3='TOGGLE_OVERVIEW::::end'
+swipe-left-3='WORKSPACE_NEXT::end'
+swipe-percent-threshold=uint32 20
+swipe-right-3='WORKSPACE_PREVIOUS::end'
+swipe-up-3='TOGGLE_OVERVIEW::::end'
+
+[org/cinnamon/keyboard]
+keyboard-position='bottom'
+keyboard-size=3
+
+[org/cinnamon/muffin]
+draggable-border-width=10
+tile-maximize=true
+
+[org/cinnamon/settings-daemon/plugins/xsettings]
+enabled-gtk-modules=['appmenu-gtk-module']
+overrides={'Gtk/ShellShowsAppMenu': <1>, 'Gtk/ShellShowsMenubar': <1>}
+
+[org/x/apps/portal]
+color-scheme='prefer-dark'

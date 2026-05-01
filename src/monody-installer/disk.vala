@@ -13,17 +13,15 @@ public class DiskPage : Box {
         this.spacing = 12;
         this.margin = 30;
 
-        var header = new Label ("Select Installation Disk");
-        header.get_style_context ().add_class ("page-header");
+        var header = new Label ("<span font_weight='bold' font_size='large'>Select Installation Disk</span>");
+        header.use_markup = true;
         header.xalign = 0;
 
         var desc = new Label ("Choose the disk where Monody Linux will be installed.\nAll data on the selected disk will be destroyed.");
-        desc.get_style_context ().add_class ("page-desc");
         desc.xalign = 0;
 
         store = new Gtk.ListStore (3, typeof (string), typeof (string), typeof (string));
         tree_view = new TreeView.with_model (store);
-        tree_view.get_style_context ().add_class ("disk-list");
         tree_view.headers_visible = true;
         tree_view.enable_grid_lines = TreeViewGridLines.HORIZONTAL;
 
@@ -55,7 +53,6 @@ public class DiskPage : Box {
         scroll.add (tree_view);
         scroll.set_policy (PolicyType.AUTOMATIC, PolicyType.AUTOMATIC);
         scroll.expand = true;
-        scroll.get_style_context ().add_class ("disk-scroll");
 
         tree_view.cursor_changed.connect (() => {
             TreeModel model;
@@ -80,7 +77,7 @@ public class DiskPage : Box {
         string output = Utils.run_sync ("lsblk -dlpno NAME,SIZE,MODEL");
         var lines = output.split ("\n");
         foreach (var line in lines) {
-            if (line.strip () == "") continue;
+            if (line.strip () == "")continue;
             var parts = line.split (" ", 3);
             if (parts.length >= 2) {
                 string dev = parts[0].strip ();

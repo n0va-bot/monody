@@ -7,7 +7,7 @@ dependencies = [
     dependency('gio-2.0'),
     dependency('vte-2.91'),
     meson.get_compiler('vala').find_library('posix'),
-    meson.get_compiler('c').find_library('timezonemap', required: true),
+    meson.get_compiler('c').find_library('m', required: false),
 ]
 
 sources = [
@@ -28,9 +28,10 @@ sources = [
 
 executable('monody-installer',
     sources,
-    'timezonemap.vapi',
     dependencies: dependencies,
-    c_args: ['-I/usr/include/timezonemap'],
     install: true,
     install_dir: get_option('bindir')
 )
+
+install_data('bg.png', install_dir: get_option('datadir') / 'monody-installer')
+install_subdir('data/timezone', install_dir: get_option('datadir') / 'monody-installer')

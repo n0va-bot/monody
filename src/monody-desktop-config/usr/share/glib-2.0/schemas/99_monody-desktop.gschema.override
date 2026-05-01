@@ -1,0 +1,26 @@
+[org.cinnamon.desktop.background]
+picture-uri='file:///usr/share/backgrounds/monody.svg'
+picture-uri-dark='file:///usr/share/backgrounds/monody.svg'
+picture-options='zoom'
+
+[org.cinnamon.desktop.keybindings.wm]
+close=['<Alt>F4', '<Super>q']
+
+[org.cinnamon.desktop.keybindings.media-keys]
+terminal=['<Primary><Alt>t', '<Super>t']
+
+[org.cinnamon.desktop.default-applications.terminal]
+exec='mate-terminal'
+exec-arg='-e'
+
+[org.cinnamon.desktop.default-applications.calculator]
+exec='mate-calc'
+
+[org.cinnamon.desktop.default-applications.browser]
+exec='badwolf'
+
+[org.cinnamon.desktop.input-sources]
+sources=[('xkb', 'us')]
+
+[org.gnome.desktop.input-sources]
+sources=[('xkb', 'us')]

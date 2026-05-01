@@ -27,7 +27,7 @@ jobs:
             echo "ISO_SIZE=${{ inputs.iso_size }}" >> $GITHUB_ENV
             echo "ISO_SHA256=${{ inputs.iso_sha256 }}" >> $GITHUB_ENV
           else
-            RELEASE_JSON=$(curl -s https://api.github.com/repos/n0va-bot/monody/releases)
+            RELEASE_JSON=$(curl -s https://api.github.com/repos/MonodyDev/monody/releases)
             SIZE_BYTES=$(echo "$RELEASE_JSON" | jq -r '.[0].assets[0].size')
             DIGEST=$(echo "$RELEASE_JSON" | jq -r '.[0].assets[0].digest' | sed 's/^sha256://')
             SIZE_MB=$(echo "$SIZE_BYTES" | awk '{printf "%.0fM", $1/1048576}')
@@ -37,9 +37,8 @@ jobs:
 
       - name: Update website checksum and link
         run: |
-          sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">${{ env.ISO_SHA256 }}</code>|" website/index.md
-          sed -i "s|<a id=\"iso-download-link\" href=\"[^\"]*\"|<a id=\"iso-download-link\" href=\"https://github.com/n0va-bot/monody/releases/download/nightly/monody-x86_64.iso\"|" website/index.md
-          sed -i "s|<span id=\"iso-size\" class=\"val hi\">.*</span>|<span id=\"iso-size\" class=\"val hi\">${{ env.ISO_SIZE }}</span>|" website/index.md
+          sed -i "s|<code id=\"checksum-value\">.*</code>|<code id=\"checksum-value\">${{ env.ISO_SHA256 }}</code>|" website/index.html
+          sed -i "s|<a id=\"iso-download-link\" href=\"[^\"]*\"|<a id=\"iso-download-link\" href=\"https://github.com/MonodyDev/monody/releases/download/nightly/monody-x86_64.iso\"|" website/index.html
 
       - name: Install kewt
         run: |

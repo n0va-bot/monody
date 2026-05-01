@@ -21,82 +21,101 @@ public class UserPage : Box {
         this.spacing = 12;
         this.margin = 30;
 
-        var header = new Label ("User & System");
-        header.get_style_context ().add_class ("page-header");
+        var header = new Label ("<span font_weight='bold' font_size='large'>Who are you?</span>");
+        header.use_markup = true;
         header.xalign = 0;
-
-        var desc = new Label ("Configure your user account, hostname, and swap space.");
-        desc.get_style_context ().add_class ("page-desc");
-        desc.xalign = 0;
 
         var grid = new Grid ();
         grid.row_spacing = 10;
         grid.column_spacing = 16;
+        grid.margin_top = 10;
 
         int row = 0;
 
-        hostname_entry = new Entry ();
-        hostname_entry.text = config.hostname;
-        hostname_entry.hexpand = true;
-        hostname_entry.changed.connect (() => { 
-            config.hostname = hostname_entry.text; 
-            revalidate (); 
-        });
-        attach_row (grid, "Hostname", hostname_entry, ref row);
-
         display_name_entry = new Entry ();
-        display_name_entry.placeholder_text = "e.g. Gżegorz Brzęczyszczykiewicz";
         display_name_entry.changed.connect (() => {
             config.display_name = display_name_entry.text;
             if (auto_username) {
                 string slug = display_name_entry.text.down ().replace (" ", "_");
                 try {
-                    var regex = new GLib.Regex("[^a-z0-9_]");
+                    var regex = new GLib.Regex ("[^a-z0-9_]");
                     slug = regex.replace_literal (slug, slug.length, 0, "");
                 } catch (Error e) {}
                 username_entry.text = slug;
-                auto_username = true; 
+
+                string host = slug + "-pc";
+                if (slug == "")host = "";
+                hostname_entry.text = host;
+
+                auto_username = true;
             }
             revalidate ();
         });
-        attach_row (grid, "Display Name", display_name_entry, ref row);
+        attach_row (grid, "Your name:", display_name_entry, ref row);
+
+        hostname_entry = new Entry ();
+        hostname_entry.text = config.hostname;
+        hostname_entry.hexpand = true;
+        hostname_entry.changed.connect (() => {
+            if (hostname_entry.has_focus) {
+                auto_username = false;
+            }
+            config.hostname = hostname_entry.text;
+            revalidate ();
+        });
+        attach_row (grid, "Your computer's name:", hostname_entry, ref row);
 
         username_entry = new Entry ();
         username_entry.text = config.username;
         username_entry.hexpand = true;
-        username_entry.changed.connect (() => { 
+        username_entry.changed.connect (() => {
             if (username_entry.has_focus) {
                 auto_username = false;
             }
-            config.username = username_entry.text; 
-            revalidate (); 
+            config.username = username_entry.text;
+            revalidate ();
         });
-        attach_row (grid, "Username", username_entry, ref row);
+        attach_row (grid, "Pick a username:", username_entry, ref row);
+
+        display_name_entry.text = "Monody";
+
+        var pass_lbl = new Label ("Choose a password:");
+        pass_lbl.margin_top = 10;
+        pass_lbl.xalign = 1;
+        grid.attach (pass_lbl, 0, row, 1, 1);
 
         user_pass_entry = new Entry ();
+        user_pass_entry.margin_top = 10;
         user_pass_entry.visibility = false;
         user_pass_entry.input_purpose = InputPurpose.PASSWORD;
-        user_pass_entry.changed.connect (() => { 
-            config.user_pass = user_pass_entry.text; 
-            revalidate (); 
+        user_pass_entry.changed.connect (() => {
+            config.user_pass = user_pass_entry.text;
+            revalidate ();
         });
-        attach_row (grid, "Password", user_pass_entry, ref row);
+        grid.attach (user_pass_entry, 1, row, 1, 1);
+        row++;
 
         user_pass_confirm = new Entry ();
         user_pass_confirm.visibility = false;
         user_pass_confirm.input_purpose = InputPurpose.PASSWORD;
         user_pass_confirm.changed.connect (revalidate);
-        attach_row (grid, "Confirm Password", user_pass_confirm, ref row);
+        attach_row (grid, "Confirm your password:", user_pass_confirm, ref row);
+
+        var root_lbl = new Label ("Root password (optional):");
+        root_lbl.margin_top = 10;
+        root_lbl.xalign = 1;
+        grid.attach (root_lbl, 0, row, 1, 1);
 
         root_pass_entry = new Entry ();
+        root_pass_entry.margin_top = 10;
         root_pass_entry.visibility = false;
         root_pass_entry.input_purpose = InputPurpose.PASSWORD;
-        root_pass_entry.placeholder_text = "Leave empty to disable";
-        root_pass_entry.changed.connect (() => { 
-            config.root_pass = root_pass_entry.text; 
+        root_pass_entry.changed.connect (() => {
+            config.root_pass = root_pass_entry.text;
             revalidate ();
         });
-        attach_row (grid, "Root Password", root_pass_entry, ref row);
+        grid.attach (root_pass_entry, 1, row, 1, 1);
+        row++;
 
         long mem_mb = get_total_ram_mb ();
         swap_combo = new ComboBoxText ();
@@ -111,14 +130,13 @@ public class UserPage : Box {
         swap_combo.changed.connect (() => {
             config.swap_size = int.parse (swap_combo.get_active_id ());
         });
-        attach_row (grid, "Swapfile", swap_combo, ref row);
+        attach_row (grid, "Swap space:", swap_combo, ref row);
 
         validation_label = new Label ("");
-        validation_label.get_style_context ().add_class ("warning-text");
+        validation_label.use_markup = true;
         validation_label.halign = Align.START;
 
         this.pack_start (header, false, false, 0);
-        this.pack_start (desc, false, false, 0);
         this.pack_start (grid, false, false, 0);
         this.pack_start (validation_label, false, false, 0);
     }
@@ -143,7 +161,6 @@ public class UserPage : Box {
 
     private void attach_row (Grid grid, string label, Widget widget, ref int row) {
         var l = new Label (label);
-        l.get_style_context ().add_class ("form-label");
         l.xalign = 1;
         grid.attach (l, 0, row, 1, 1);
         grid.attach (widget, 1, row, 1, 1);
@@ -156,22 +173,22 @@ public class UserPage : Box {
 
     public bool is_valid () {
         if (hostname_entry.text.strip () == "") {
-            validation_label.label = "Hostname cannot be empty.";
+            validation_label.label = "<span color='red'>Hostname cannot be empty.</span>";
             return false;
         }
         if (username_entry.text.strip () == "") {
-            validation_label.label = "Username cannot be empty.";
+            validation_label.label = "<span color='red'>Username cannot be empty.</span>";
             return false;
         }
         if (user_pass_entry.text == "") {
-            validation_label.label = "Password cannot be empty.";
+            validation_label.label = "<span color='red'>Password cannot be empty.</span>";
             return false;
         }
         if (user_pass_entry.text != user_pass_confirm.text) {
-            validation_label.label = "Passwords do not match.";
+            validation_label.label = "<span color='red'>Passwords do not match.</span>";
             return false;
         }
-        
+
         validation_label.label = "";
         return true;
     }

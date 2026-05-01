@@ -3,11 +3,11 @@
 Operation = Install
 Operation = Upgrade
 Type = Package
-Target = pacman-mirrorlist
+Target = artix-mirrorlist
+Target = archlinux-mirrorlist
 
 [Action]
-Description = Uncommenting HTTPS mirrors in /etc/pacman.d/mirrorlist...
+Description = Uncommenting HTTPS mirrors in mirrorlists...
 When = PostTransaction
-Depends = pacman-mirrorlist
 Depends = sed
-Exec = /usr/bin/sed -E -i 's/#(Server = https:)/\1/g' /etc/pacman.d/mirrorlist
+Exec = /usr/bin/sed -E -i 's/#(Server = https:)/\1/g' /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist-arch

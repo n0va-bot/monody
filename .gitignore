@@ -10,3 +10,9 @@ src/*/*.pkg.tar.zst
 pacman.conf
 pkg/
 src/*/src/
+src/monody-desktop-config/AppMenu
+src/monody-desktop-config/Maximiser
+src/monody-desktop-config/ScaleView
+src/monody-desktop-config/Trash
+src/monody-desktop-config/WindowControls
+src/monody-desktop-config/Cinnamenu

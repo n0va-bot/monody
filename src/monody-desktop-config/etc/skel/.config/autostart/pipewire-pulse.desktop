@@ -1,7 +1,0 @@
-[Desktop Entry]
-Name=Pipewire PulseAudio
-Comment=Pipewire PulseAudio Compatibility Layer
-Exec=pipewire-pulse
-Terminal=false
-Type=Application
-X-GNOME-Autostart-enabled=true

@@ -1,7 +1,0 @@
-[Desktop Entry]
-Name=Pipewire
-Comment=Pipewire Multimedia Server
-Exec=pipewire
-Terminal=false
-Type=Application
-X-GNOME-Autostart-enabled=true

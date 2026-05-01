@@ -25,7 +25,7 @@ public class InstallConfig : Object {
     public string root_pass { get; set; default = ""; }
     public string keymap { get; set; default = "us"; }
     public string partition_mode { get; set; default = "auto"; }
-    
+
     public string root_fs { get; set; default = "btrfs"; }
     public bool encrypt_root { get; set; default = false; }
     public string luks_password { get; set; default = ""; }

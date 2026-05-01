@@ -1,11 +1,20 @@
 pkgname=monody-desktop-config
-pkgver=1.0.0
-pkgrel=3
+pkgver=2.0.0
+pkgrel=1
 pkgdesc="Monody system-wide desktop configurations"
 arch=('any')
 license=('GPL')
-depends=()
+depends=('dconf')
 install="monody-desktop-config.install"
+source=(
+  'git+https://github.com/MonodyDev/AppMenu.git'
+  'git+https://github.com/MonodyDev/Maximiser.git'
+  'git+https://github.com/MonodyDev/ScaleView.git'
+  'git+https://github.com/MonodyDev/Trash.git'
+  'git+https://github.com/MonodyDev/WindowControls.git'
+  'git+https://github.com/fredcw/Cinnamenu.git'
+)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
   for item in "$startdir"/*; do
@@ -15,6 +24,39 @@ package() {
       cp -a "$item" "$pkgdir/"
     fi
   done
+
+  install -d "$pkgdir/usr/share/cinnamon/applets"
+  install -d "$pkgdir/usr/share/cinnamon/extensions"
+
+  sed -i 's/"default": ""/"default": "<Super>Tab"/' "$srcdir/ScaleView/settings-schema.json"
+
+  jq '.["menu-icon-custom"].default = true |
+      .["menu-icon"].default = "app-launcher" |
+      .["applications-view-mode"].default = 0 |
+      .["custom-menu-width"].default = 600 |
+      .["custom-menu-height"].default = 450 |
+      .["show-recents-category"].default = false |
+      .["show-favorite-apps-category"].default = true |
+      .["show-home-folder-category"].default = false |
+      .["show-emoji-category"].default = false |
+      .["web-search-option"].default = 6 |
+      .["web-suggestions"].default = true |
+      .["enable-web-history-search"].default = true |
+      .["enable-web-bookmarks-search"].default = true |
+      .["categories"].default = ["favorite_apps", "all", "places"]' \
+      "$srcdir/Cinnamenu/Cinnamenu@json/5.8/settings-schema.json" > /tmp/cm.json && \
+  mv /tmp/cm.json "$srcdir/Cinnamenu/Cinnamenu@json/5.8/settings-schema.json"
+  
+  sed -i "s/'emblem-favorite'/'monody-favorite-apps'/" "$srcdir/Cinnamenu/Cinnamenu@json/5.8/categoriesview.js"
+
+  cp -r "$srcdir/AppMenu" "$pkgdir/usr/share/cinnamon/applets/AppMenu@n0va"
+  cp -r "$srcdir/Maximiser" "$pkgdir/usr/share/cinnamon/extensions/Maximiser@n0va"
+  cp -r "$srcdir/ScaleView" "$pkgdir/usr/share/cinnamon/applets/ScaleView@n0va"
+  cp -r "$srcdir/Trash" "$pkgdir/usr/share/cinnamon/applets/Trash@n0va"
+  cp -r "$srcdir/WindowControls" "$pkgdir/usr/share/cinnamon/applets/WindowControls@n0va"
+  cp -r "$srcdir/Cinnamenu/Cinnamenu@json" "$pkgdir/usr/share/cinnamon/applets/Cinnamenu@json"
+
+  find "$pkgdir/usr/share/cinnamon/" -name ".git" -exec rm -rf {} + 2>/dev/null || true
 
   if [ -f "$pkgdir/etc/lightdm/lightdm-gtk-greeter.conf" ]; then
       mv "$pkgdir/etc/lightdm/lightdm-gtk-greeter.conf" "$pkgdir/etc/lightdm/lightdm-gtk-greeter.conf.monody"

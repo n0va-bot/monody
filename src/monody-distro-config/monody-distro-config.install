@@ -2,6 +2,9 @@ post_install() {
     [ -f /etc/issue.monody ] && cp -f /etc/issue.monody /etc/issue
     [ -f /etc/os-release.monody ] && cp -f /etc/os-release.monody /etc/os-release
     [ -f /etc/lsb-release.monody ] && cp -f /etc/lsb-release.monody /etc/lsb-release
+    if ! grep -q "^\[extra\]" /etc/pacman.conf; then
+        echo -e "\n[extra]\nInclude = /etc/pacman.d/mirrorlist-arch" >> /etc/pacman.conf
+    fi
 }
 
 post_upgrade() {

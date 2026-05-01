@@ -1,11 +1,11 @@
 pkgname=monody-installer
-pkgver=1.0.1
+pkgver=2.0.3
 pkgrel=1
 pkgdesc="Installer for Monody Linux"
 arch=('x86_64')
-url="https://github.com/n0va-bot/monody"
+url="https://github.com/MonodyDev/monody"
 license=('ISC')
-depends=('gtk3' 'timezonemap' 'vte3' 'gparted' 'btrfs-progs' 'cryptsetup')
+depends=('gtk3' 'vte3' 'gparted' 'btrfs-progs' 'cryptsetup')
 makedepends=('vala' 'meson' 'ninja')
 
 source=("monody-installer.vala"
@@ -23,8 +23,8 @@ source=("monody-installer.vala"
         "welcome.vala"
         "monody-installer.desktop"
         "org.monody.installer.policy"
-        "timezonemap.vapi"
-        "meson.build")
+        "meson.build"
+        "bg.png")
 sha256sums=('SKIP'
             'SKIP'
             'SKIP'
@@ -44,6 +44,7 @@ sha256sums=('SKIP'
             'SKIP')
 
 build() {
+  cp -r "$startdir/data" "$srcdir/"
   arch-meson . build
   meson compile -C build
 }
