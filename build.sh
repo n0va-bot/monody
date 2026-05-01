@@ -113,6 +113,25 @@ done
 
 success "All dependencies found."
 
+# ── paru ──────────────────────────────────────────────
+
+header "Checking paru"
+if ! command -v paru &>/dev/null; then
+    log "paru not found, installing from AUR..."
+    mkdir -p "$AUR_DIR"
+    if [ ! -d "$AUR_DIR/paru" ]; then
+        git clone "https://aur.archlinux.org/paru.git" "$AUR_DIR/paru" || error "Failed to clone paru"
+    fi
+    (
+        cd "$AUR_DIR/paru" || exit 1
+        makepkg -scC --noconfirm || error "Failed to build paru"
+        $SUDO pacman -U --noconfirm *.pkg.tar.zst || error "Failed to install paru"
+    )
+    success "paru installed successfully."
+else
+    success "paru is already installed."
+fi
+
 header "Preparing Directories"
 mkdir -p "$WORK_DIR" "$OUT_DIR" "$REPO_DIR" "$AUR_DIR"
 mkdir -p "$PROJ_DIR/airootfs/usr/local/bin"
@@ -199,7 +218,7 @@ for repo in "${AUR_REPOS[@]}"; do
                 if [ ${#_makedeps[@]} -gt 0 ]; then
                     _missing=()
                     for dep in "${_makedeps[@]}"; do
-                        dep_name=$(echo "$dep" | sed 's/[<>=].*//') 
+                        dep_name=$(echo "$dep" | sed 's/[<>=].*//')
                         pacman -Qi "$dep_name" &>/dev/null || _missing+=("$dep_name")
                     done
                     if [ ${#_missing[@]} -gt 0 ]; then
