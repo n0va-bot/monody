@@ -124,8 +124,7 @@ if ! command -v paru &>/dev/null; then
     fi
     (
         cd "$AUR_DIR/paru" || exit 1
-        makepkg -scC --noconfirm || error "Failed to build paru"
-        $SUDO pacman -U --noconfirm *.pkg.tar.zst || error "Failed to install paru"
+        makepkg -ssi --noconfirm || error "Failed to build paru"
     )
     success "paru installed successfully."
 else

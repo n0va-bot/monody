@@ -19,14 +19,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache Prebuilt Repo
-        uses: actions/cache@v4
-        with:
-          path: prebuilt_repo/
-          key: monody-repo-${{ github.run_id }}
-          restore-keys: |
-            monody-repo-
-
       - name: Install system dependencies
         run: |
           pacman -Syu --noconfirm
@@ -53,6 +45,10 @@ jobs:
           sudo -u build ./build.sh aur
           sudo -u build ./build.sh repo
 
+      - name: Clean debug packages
+        run: |
+          sudo rm -rf prebuilt_repo/*debug.pkg.tar.zst
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -64,15 +60,7 @@ jobs:
 
       - name: Deploy Repository
         run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.REMOTE_HOST }} "mkdir -p /var/www/monody/repo/x86_64/tmp"
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.REMOTE_HOST }} "rm -rf /var/www/monody/repo/x86_64/*"
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.REMOTE_HOST }} "mkdir -p /var/www/monody/repo/x86_64"
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.pkg.tar.zst ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.db.tar.gz ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.files.tar.gz ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/*.db.* ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/monody.db ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/monody.files ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no prebuilt_repo/* ${{ secrets.REMOTE_HOST }}:/var/www/monody/repo/x86_64/
 
       - name: Upload Repo Artifact
         uses: actions/upload-artifact@v4
